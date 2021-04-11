@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -ex
+
+git clean -xfd .shadow-cljs/ resources/
+npx shadow-cljs release main
+cp -r resources/public/* docs
+git add docs
+git commit -m 'Build new version'

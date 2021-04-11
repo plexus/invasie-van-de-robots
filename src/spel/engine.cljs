@@ -21,10 +21,11 @@
                       :sprites {}}))
 
 (def world-height 1000)
-(def achtergrond-kleur 0xFFFFFF)
+(def achtergrond-kleur 0x000000)
 
-(defonce app (p/full-screen-app {:background-color "white"}))
+(defonce app (p/full-screen-app {}))
 (defonce renderer (:renderer app))
+(j/assoc! renderer :backgroundColor "#000000")
 
 ;; stage
 ;; ├── fill-layer
@@ -120,9 +121,9 @@
       (p/assign! world {:x 0
                         :scale {:x ratio
                                 :y ratio}}))
-    (.beginFill bg-graphics achtergrond-kleur)
-    (.drawRect bg-graphics 0 0 width height)
-    (.endFill bg-graphics)))
+    #_(.beginFill bg-graphics achtergrond-kleur)
+    #_(.drawRect bg-graphics 0 0 width height)
+    #_(.endFill bg-graphics)))
 
 (defn viewport->world [point]
   (.applyInverse (get-in viewport [:transform :worldTransform])
@@ -159,8 +160,12 @@
                  (let [{:keys [loaded?] :as state} (scene-state)]
                    (when loaded? (tick-scene (assoc state :delta delta))))
                  (catch :default e
-                   (prn "game-loop error" e)))))
+                   (prn "game-loop error" e))))))
 
+(defn mount-canvas! []
+  (js/document.body.appendChild (:view app)))
+
+(defn add-dom-handlers! []
   (doseq [t [:click :touchstart]]
     (p/listen! (first (js/document.getElementsByTagName "canvas"))
                (name t) t

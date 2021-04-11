@@ -23,11 +23,25 @@
 
 (def debug? false)
 
+(defn center-around-player [player]
+  ;; Keep the viewport centered on Player, clamping on the sides. Note that
+  ;; our "viewport" works by shifting a base layer in the opposite
+  ;; direction, so movements are negative
+  (let [bg-width (:width (p/local-bounds bg-layer))
+        viewport-max (visible-world-width)]
+    (if (< bg-width viewport-max)
+      (pan-viewport (/ (- bg-width viewport-max) 2))
+      (pan-viewport (clamp 0
+                           (- (:x player) (/ viewport-max 2))
+                           (- bg-width viewport-max))))))
+
+
 (defn enter-room [{:keys [sprites room rooms]}]
   (draw-background (get sprites room))
   (let [player (:player sprites)
         player-size (get-in rooms [room :player-size])
         player-scale (/ player-size (:height (:texture player)))]
+    (center-around-player player)
     (p/assign! player {:scale {:x player-scale :y player-scale}})))
 
 (defn build-collision-system [player-collision-object collisions]
@@ -189,17 +203,8 @@
               :x (:x player)
               :y (:y player))
     (debug-draw state room)
+    (center-around-player player)
 
-    ;; Keep the viewport centered on Player, clamping on the sides. Note that
-    ;; our "viewport" works by shifting a base layer in the opposite
-    ;; direction, so movements are negative
-    (let [bg-width (:width (p/local-bounds bg-layer))
-          viewport-max (visible-world-width)]
-      (if (< bg-width viewport-max)
-        (pan-viewport (- (/ bg-width 2)))
-        (pan-viewport (clamp 0
-                             (- (:x player) (/ viewport-max 2))
-                             (- bg-width viewport-max)))))
     ;; set col-obj x y
     (if-let [[obj :as collisions] (doall (filter-collisions player-collision collision-sys))]
       (when (not pause-collisions?)
