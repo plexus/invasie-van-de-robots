@@ -77,6 +77,12 @@
          (fn [s]
            (apply update-in s [:scenes (:scene s)] f args))))
 
+(defn show-spinner! []
+  (j/assoc-in! (js/document.getElementById "spinner") [:style :display] "block"))
+
+(defn hide-spinner! []
+  (j/assoc-in! (js/document.getElementById "spinner") [:style :display] "none"))
+
 (add-watch state ::switch-scene
            (fn [_ _ old new]
              (when (not= (:scene old) (:scene new))
@@ -85,6 +91,7 @@
                  (log/info :switching-scene {:old (:scene old) :new (:scene new)} )
                  (promise/do
                    (stop-scene old)
+                   (show-spinner!)
                    (if-not (:loaded? new)
                      (do
                        (log/debug :loading-scene new)
@@ -98,7 +105,8 @@
                                     (assoc :scene (:scene new)
                                            :loaded? true))))
                          (start-scene (get-in @state scene-path))))
-                     (start-scene new-scene)))))))
+                     (start-scene new-scene))
+                   (hide-spinner!))))))
 
 (defn goto-scene [name]
   (swap! state assoc :scene name))

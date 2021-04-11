@@ -27,9 +27,9 @@ spel.main-menu/no-clean-ns
 
 (defonce init-once (promise/do
                      (engine/init!)
+                     (engine/load-scene :main-menu)
                      (engine/goto-scene :main-menu)
                      (engine/mount-canvas!)
-                     (.remove (js/document.getElementById "spinner"))
                      (engine/add-dom-handlers!)))
 
 (defn on-hot-reload []
