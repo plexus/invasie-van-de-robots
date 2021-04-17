@@ -21,6 +21,7 @@
                       :sprites {}}))
 
 (def world-height 1000)
+(def ui-height 100)
 (def achtergrond-kleur 0x000000)
 
 (defonce app (p/full-screen-app {}))
@@ -41,10 +42,12 @@
 
 (defonce bg-layer (p/container {}))
 (defonce sprite-layer (p/container {}))
+(defonce ui-layer (p/container {}))
+
 (defonce viewport (p/container {} bg-layer sprite-layer))
 (defonce world (p/container {} viewport))
 
-(defonce add-layers-once (conj! stage fill-layer world))
+(defonce add-layers-once (conj! stage fill-layer world ui-layer))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Life cycle
@@ -83,6 +86,8 @@
 (defn hide-spinner! []
   (j/assoc-in! (js/document.getElementById "spinner") [:style :display] "none"))
 
+(declare resize-pixi)
+
 (add-watch state ::switch-scene
            (fn [_ _ old new]
              (when (not= (:scene old) (:scene new))
@@ -106,6 +111,7 @@
                                            :loaded? true))))
                          (start-scene (get-in @state scene-path))))
                      (start-scene new-scene))
+                   (resize-pixi)
                    (hide-spinner!))))))
 
 (defn goto-scene [name]
@@ -117,18 +123,30 @@
   (get-in app [:renderer :screen]))
 
 (defn screen-to-world-ratio []
-  (let [{:keys [width height]} (screen-size)]
-    (/ height world-height)))
+  (let [{:keys [width height]} (screen-size)
+        ui-size (:ui-size (scene-state) 0)]
+    (* (- 1 ui-size) (/ height world-height))))
+
+(defn screen-to-ui-ratio []
+  (let [{:keys [width height]} (screen-size)
+        ui-size (:ui-size (scene-state) 0)]
+    (* ui-size (/ height ui-height))))
 
 (defn visible-world-width []
   (/ (:width (screen-size)) (screen-to-world-ratio)))
 
 (defn resize-pixi []
-  (let [{:keys [width height]} (screen-size)]
-    (let [ratio (screen-to-world-ratio)]
+  (let [{:keys [width height]} (screen-size)
+        ui-size (:ui-size (scene-state) 0)]
+    (let [ratio (screen-to-world-ratio)
+          ui-ratio (screen-to-ui-ratio)]
       (p/assign! world {:x 0
                         :scale {:x ratio
-                                :y ratio}}))
+                                :y ratio}})
+      (p/assign! ui-layer {:x 0
+                           :y (* height (- 1 ui-size))
+                           :scale {:x ui-ratio
+                                   :y ui-ratio}}))
     #_(.beginFill bg-graphics achtergrond-kleur)
     #_(.drawRect bg-graphics 0 0 width height)
     #_(.endFill bg-graphics)))

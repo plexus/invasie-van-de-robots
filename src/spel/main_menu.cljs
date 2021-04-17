@@ -18,15 +18,15 @@
 (defmethod load-scene :main-menu [scene] scene)
 (defmethod start-scene :main-menu [scene]
   (conj! (js/document.getElementById "center")
-         (thicc/h [:nav#menu
-                   [:h1 "INVASIE VAN DE ROBOTS"]
-                   [:button {:on-click (fn []
-                                         (engine/goto-scene :invasie))}
-                    "START"]
-                   [:section.credits
-                    [:p "Idee en uitwerking: Cyriel Cumps"]
-                    [:p "Tekeningen: Cyriel & Vic Cumps"]
-                    [:p "Programmatie: Arne Brasseur"]]]))
+         (thicc/dom [:nav#menu
+                     [:h1 "INVASIE VAN DE ROBOTS"]
+                     [:button {:on-click (fn []
+                                           (engine/goto-scene :invasie))}
+                      "START"]
+                     [:section.credits
+                      [:p "Idee en uitwerking: Cyriel Cumps"]
+                      [:p "Tekeningen: Cyriel & Vic Cumps"]
+                      [:p "Programmatie: Arne Brasseur"]]]))
   scene)
 
 (defmethod stop-scene :main-menu [scene]

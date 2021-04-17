@@ -25,12 +25,19 @@ spel.main-menu/no-clean-ns
                #_(crt/CRTFilter. #js {:lineWidth 0.2
                                       :vignetting 0})])
 
-(defonce init-once (promise/do
-                     (engine/init!)
-                     (engine/load-scene :main-menu)
-                     (engine/goto-scene :main-menu)
-                     (engine/mount-canvas!)
-                     (engine/add-dom-handlers!)))
+(defn search-params []
+  (js/URLSearchParams. js/window.location.search))
+
+(defn query-param [k] (.get ^js (search-params) k))
+
+(defonce init-once
+  (let [scene (keyword (or (query-param "scene") "main-menu"))]
+    (promise/do
+      (engine/init!)
+      (engine/load-scene scene)
+      (engine/goto-scene scene)
+      (engine/mount-canvas!)
+      (engine/add-dom-handlers!))))
 
 (defn on-hot-reload []
   (log/info :hot-reload! {})

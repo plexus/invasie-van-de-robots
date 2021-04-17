@@ -48,15 +48,15 @@
   "Given an svg <image> element (SVGImageElement), return a equivalent
   HTMLImageElement."
   [image base-url]
-  (log/info :loading-image image)
+  (log/debug :loading-image image)
   (promise/promise [resolve]
     (let [html-image (js/Image.) #_(js/document.createElement "img")]
       (when (= (.-id image) "pleintje")
         (def pleintje html-image))
       (j/assoc! html-image
                 :onload (fn []
-                          (log/info :loaded-image {:id (.-id image)
-                                                   :img html-image})
+                          (log/debug :loaded-image {:id (.-id image)
+                                                    :img html-image})
                           (resolve html-image))
                 :onerror (fn [err]
                            (log/error :html-image-error err)
@@ -227,7 +227,6 @@
                                                   :resolution 1
                                                   :width width
                                                   :height height}))]
-      (prn [width height])
       (j/assoc-in! base-texture [:resource :url] (str url "#" id))
       (assoc data
              :html-image html-img

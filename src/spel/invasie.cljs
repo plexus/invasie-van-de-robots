@@ -8,11 +8,12 @@
             [lambdaisland.puck.collisions :as collisions]
             [lambdaisland.puck.daedalus :as puck-daedalus]
             [lambdaisland.puck.math :as m]
+            [spel.thicc :as thicc]
             [spel.svg :as svg]
             [spel.engine :refer [app bg-layer draw-background
                                  handle-event load-scene scene-state
-                                 scene-swap! sprite-layer start-scene
-                                 stop-scene tick-scene
+                                 scene-swap! sprite-layer ui-layer
+                                 start-scene stop-scene tick-scene
                                  viewport pan-viewport viewport->world
                                  visible-world-width
                                  goto-scene
@@ -22,6 +23,21 @@
 (def svg-url "images/invasie_van_de_robots.svg")
 
 (def debug? false)
+
+(defn show-text [text]
+  (let [box (thicc/el-by-id "text-box")]
+    (j/assoc! box :innerText text)
+    (j/assoc-in! box [:style :display] "block")))
+
+(defn hide-text []
+  (let [box (thicc/el-by-id "text-box")]
+    (j/assoc-in! box [:style :display] "none")))
+
+(defn flash-text [text]
+  (show-text text)
+  (js/setTimeout hide-text 2000))
+
+
 
 (defn center-around-player [player]
   ;; Keep the viewport centered on Player, clamping on the sides. Note that
@@ -36,13 +52,29 @@
                            (- bg-width viewport-max))))))
 
 
-(defn enter-room [{:keys [sprites room rooms]}]
+(defn enter-room [{:keys [sprites room rooms inventory]}]
   (draw-background (get sprites room))
   (let [player (:player sprites)
-        player-size (get-in rooms [room :player-size])
+        {:keys [player-size items]} (get rooms room)
         player-scale (/ player-size (:height (:texture player)))]
     (center-around-player player)
-    (p/assign! player {:scale {:x player-scale :y player-scale}})))
+    (p/assign! player {:scale {:x player-scale :y player-scale}})
+
+    (doseq [sprite sprite-layer
+            :when (not= sprite player)]
+      (disj! sprite-layer sprite))
+
+    (doseq [{:keys [item rect] :as item-data} items
+            :when (not (some #{item} inventory))
+            :let [{:keys [texture] :as sprite} (get sprites item)
+                  {:keys [width height]} texture
+                  scale (min (/ (:heigt rect) height)
+                             (/ (:width rect) width))]]
+      (conj! sprite-layer sprite)
+      (p/assign! sprite {:x (:x rect)
+                         :y (:y rect)
+                         :scale {:x scale :y scale}
+                         :item item-data}))))
 
 (defn build-collision-system [player-collision-object collisions]
   (let [sys (collisions/system)]
@@ -109,7 +141,11 @@
              player-size      (some #(when (= :player-size (:type %))
                                        (:rect %))
                                     elements)
-             player-collision (collisions/Circle. 0 0 20)]
+             player-collision (collisions/Circle. 0 0 20)
+             items            (->> elements
+                                   (filter (comp #{:room-item} :type))
+                                   (map (fn [i]
+                                          (update i :rect #(scale-to-room ratio %)))))]
          {:id               id
           :sprite           (get sprites id)
           :ratio            ratio
@@ -119,38 +155,18 @@
                               (* (:height player-size) ratio))
           :collision-sys    (build-collision-system player-collision collision-objs)
           :obstacles        obstacles
-          :mesh             (build-mesh width obstacles)})))))
-
-(defn wait-for-textures [textures]
-  (log/debug :wait-for-textures textures)
-  (promise/all
-   (for [txt textures]
-     (do
-       (log/debug :waiting-for txt)
-
-       (promise/promise [resolve]
-         (.. txt -baseTexture (once "loaded" (fn [txt]
-                                               (log/debug :texture-ready txt)
-                                               (resolve txt))))
-         (when (.. txt -baseTexture -_textureID)
-           (log/debug :texture-already-loaded (.. txt -_textureID))
-           (resolve)
-           ))))))
+          :mesh             (build-mesh width obstacles)
+          :items            items})))))
 
 (defmethod load-scene :invasie [scene]
   (promise/let [svg (svg/fetch-svg svg-url)
-                _ (log/debug :svg-fetched :ok)
-                elements (svg/elements svg)
-                _ (log/debug :elements elements)
-                ;;       _ (wait-for-textures (->> elements vals (keep :texture)))
-                _ (log/debug :got-textures :ok)]
-    (log/info :invasie/loaded-svg {})
+                elements (svg/elements svg)]
     (let [start      (:start elements)
           sprites    (->> elements
                           vals
                           (filter :texture)
                           (map (fn [{:keys [id texture]}]
-                                 [id (p/sprite texture)]))
+                                 [id (j/assoc! (p/sprite texture) :id id)]))
                           (into {}))
           start-room (:origin start)
           rooms      (into {}
@@ -167,7 +183,8 @@
                           {:entity            player
                            :mesh              (get-in rooms [start-room :mesh])
                            :view              (puck-daedalus/simple-view debug-graphics)
-                           :sampling-distance 20})]
+                           :sampling-distance 20})
+          ui-graphics (p/graphics)]
 
       (assoc scene
              :player player
@@ -176,11 +193,69 @@
              :sprites sprites
              :elements elements
              :path-handler path-handler
-             :debug-graphics debug-graphics))))
+             :debug-graphics debug-graphics
+             :ui-graphics ui-graphics
+             :ui-size 0.1
+             :inventory [:hand]))))
 
-(defmethod start-scene :invasie [{:keys [player debug-graphics] :as scene}]
+(defn draw-inventory [{:keys [ui-graphics inventory sprites]}]
+  (p/with-fill [ui-graphics {:color 0xf5c842}]
+    (p/rect ui-graphics 0 0 10000 100))
+
+  (dotimes [i 21]
+    (p/with-fill [ui-graphics {:color 0}]
+      (p/rect ui-graphics (+ 5 (* 95 i)) 5 90 90)))
+
+  (doseq [[item idx] (map vector inventory (range))]
+    (let [{:keys [texture] :as sprite} (get sprites item)
+          {:keys [width height]} texture
+          size (if (< width height) height width)
+          scale (/ 70 size)]
+      (conj! ui-layer sprite)
+      (p/assign! sprite {:x (+ 15 (* 95 idx))
+                         :y 15
+                         :scale {:x scale :y scale}
+                         :interactive true
+                         :buttonMode true})
+      (p/listen!
+       sprite
+       [:mousedown :touchstart]
+       (fn [evt]
+         (p/assign! sprite {:data (j/get evt :data)
+                            :alpha 0.5
+                            :dragging true})))
+
+      (p/listen!
+       sprite
+       [:mousemove :touchmove]
+       (fn [evt]
+         (when (j/get sprite :dragging)
+           (j/assoc! sprite :position (p/local-position (j/get sprite :data) (:parent sprite))))))
+
+      (p/listen!
+       sprite
+       [:mouseup :mouseupoutside :touchend :touchendoutside]
+       (fn [evt]
+         (p/assign! sprite {:alpha 1
+                            :dragging false
+                            :data nil})
+         (doseq [item-sprite sprite-layer
+                 :when (and (:item item-sprite)
+                            (p/rect-overlap? sprite item-sprite))]
+           (let [{:keys [x y width height]} (p/bounds item-sprite)
+                 center {:x (+ x (/ width 2))
+                         :y (+ y (/ height 2))}]
+             (if (< 400 (m/distance (:player sprites) center))
+               (flash-text "Je bent te ver")
+               (scene-swap! update :inventory conj (:id item-sprite)))))
+         (draw-inventory (scene-state)))))))
+
+(defmethod start-scene :invasie [{:keys [player debug-graphics ui-graphics]
+                                  :as scene}]
   (conj! sprite-layer player debug-graphics)
-  (enter-room scene))
+  (conj! ui-layer ui-graphics)
+  (enter-room scene)
+  (draw-inventory scene))
 
 (let [debug-count (atom 0)]
   (defn debug-draw [{:keys [debug-graphics path-handler]}
@@ -232,4 +307,7 @@
 
 (comment
   (goto-scene :invasie)
-  (:elements (scene-state)))
+  (draw-inventory (scene-state))
+  (:inventory (scene-state))
+  (:width (:texture (:hand (:sprites (scene-state)))))
+  (scene-swap! update :inventory conj :postnl))
