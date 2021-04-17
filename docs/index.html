@@ -9,14 +9,16 @@
     <meta name="apple-mobile-web-app-title" content="Pixi tryout">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, minimal-ui">
     <style>
-      * {padding: 0; margin: 0}
+      * {
+          padding: 0; margin: 0; box-sizing: border-box;
+          font-family: KoboldPro;
+      }
       html, body {
           height: 100vh;
           width: 100vw;
           overflow:hidden;
           background-color: #000;
           color: #fff;
-          font-family: WorthyPro;
       }
 
       #center {
@@ -25,6 +27,10 @@
           top: 50%;
           transform: translate(-50%, -50%);
           text-align:center;
+          width: 100%;
+      }
+      #spinner {
+          margin-left: 49%;
       }
 
       h1 {
@@ -35,7 +41,20 @@
           padding: 0.3em 1em;
           margin: 1em;
           font-size: 7vh;
-          font-family: WorthyPro;
+          font-family: KoboldPro;
+      }
+
+      #text-box {
+          background-color: #7ce67c;
+          border: 3px solid #5043b0;
+          color: #5043b0;
+          font-size: 2rem;
+          border-radius: 3px;
+          width: 94%;
+          position: absolute;
+          left: 3%;
+          bottom: 3%;
+          padding: 0.5em 0.8em;
       }
 
       .credits {
@@ -43,10 +62,16 @@
           line-height: 1.5em;
       }
 
+      /* @font-face { */
+      /*   font-family: "WorthyPro"; */
+      /*   src: url("/fonts/WorthyPro.eot"); */
+      /*   src: url("/fonts/WorthyPro.woff") format("woff"), url("/fonts/WorthyPro.otf") format("opentype"), url("/fonts/WorthyPro.ttf") format("truetype"); */
+      /* } */
+
       @font-face {
-        font-family: "WorthyPro";
-        src: url("/fonts/WorthyPro.eot");
-        src: url("/fonts/WorthyPro.woff") format("woff"), url("/fonts/WorthyPro.otf") format("opentype"), url("/fonts/WorthyPro.ttf") format("truetype");
+        font-family: "KoboldPro";
+        src: url("/fonts/KoboldPro.eot");
+        src: url("/fonts/KoboldPro.woff") format("woff"), url("/fonts/KoboldPro.otf") format("opentype"), url("/fonts/KoboldPro.ttf") format("truetype");
       }
 
       /*!
@@ -239,6 +264,8 @@
           <div></div><div></div><div></div><div></div><div></div>
         </div>
       </div>
+    </div>
+    <div id="text-box" style="display: none;">
     </div>
     <script src="ui/main.js" type="application/javascript"></script>
   </body>
