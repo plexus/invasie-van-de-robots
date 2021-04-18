@@ -22,7 +22,7 @@
 
 (def svg-url "images/invasie_van_de_robots.svg")
 
-(def debug? false)
+(def debug? true)
 
 (defn show-text [text]
   (let [box (thicc/el-by-id "text-box")]
@@ -175,8 +175,9 @@
           player     (doto (puck-daedalus/with-radius (:player sprites) 20)
                        (p/assign!
                         {:anchor   {:x 0.5 :y 1}
-                         :position (m/v* (:point start)
-                                         (get-in rooms [start-room :ratio]))}))
+                         :position (doto (m/v* (doto (:point start) prn)
+                                               (get-in rooms [start-room :ratio]))
+                                     prn)}))
 
           debug-graphics (p/graphics)
           path-handler   (daedalus/path-handler
@@ -282,18 +283,20 @@
 
     ;; set col-obj x y
     (if-let [[obj :as collisions] (doall (filter-collisions player-collision collision-sys))]
-      (when (not pause-collisions?)
-        (let [[_action room target] (.-action obj)
-              {:keys [ratio width mesh]} (get rooms room)
-              rect (get-in elements [target :rect])
-              player-x (* (+ (:x rect) (/ (:width rect) 2)) ratio)
-              player-y (* (+ (:y rect) (:height rect)) ratio)]
-          (daedalus/set-mesh path-handler mesh)
-          (daedalus/set-location path-handler player-x player-y)
-          (scene-swap! assoc
-                       :room room
-                       :pause-collisions? true)
-          (enter-room (scene-state))))
+      (do
+        (prn collisions)
+        (when (not pause-collisions?)
+          (let [[_action room target] (.-action obj)
+                {:keys [ratio width mesh]} (get rooms room)
+                rect (get-in elements [target :rect])
+                player-x (* (+ (:x rect) (/ (:width rect) 2)) ratio)
+                player-y (* (+ (:y rect) (:height rect)) ratio)]
+            (daedalus/set-mesh path-handler mesh)
+            (daedalus/set-location path-handler player-x player-y)
+            (scene-swap! assoc
+                         :room room
+                         :pause-collisions? true)
+            (enter-room (scene-state)))))
       (when pause-collisions?
         (scene-swap! assoc :pause-collisions? false)))))
 
@@ -310,4 +313,8 @@
   (draw-inventory (scene-state))
   (:inventory (scene-state))
   (:width (:texture (:hand (:sprites (scene-state)))))
-  (scene-swap! update :inventory conj :postnl))
+  (scene-swap! update :inventory conj :postnl)
+
+  (:player (:sprites (scene-state)))
+  (:slaapkamerdeur2 (:elements (scene-state)))
+  )

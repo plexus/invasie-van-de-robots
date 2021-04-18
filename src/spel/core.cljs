@@ -21,9 +21,13 @@ spel.main-menu/no-clean-ns
 
 (j/assoc! engine/stage :filters
           #js [#_(doto (pixi/filters.ColorMatrixFilter.) (.polaroid))
-               #_(pixelate/PixelateFilter. 10)
+               (pixelate/PixelateFilter. 10)
                #_(crt/CRTFilter. #js {:lineWidth 0.2
                                       :vignetting 0})])
+
+#_
+(j/assoc! engine/bg-layer :filters
+          [(pixelate/PixelateFilter. 10)])
 
 (defn search-params []
   (js/URLSearchParams. js/window.location.search))
