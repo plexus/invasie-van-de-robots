@@ -83,7 +83,8 @@
       (p/assign! sprite {:x (:x rect)
                          :y (:y rect)
                          :scale {:x scale :y scale}
-                         :item item-data}))))
+                         :item item-data
+                         :inventory? true}))))
 
 (defn build-collision-system [player-collision-object collisions]
   (let [sys (collisions/system)]
@@ -228,8 +229,7 @@
                          :y 15
                          :scale {:x scale :y scale}
                          :interactive true
-                         :buttonMode true
-                         :inventory? true})
+                         :buttonMode true})
 
       (p/listen!
        sprite
@@ -307,7 +307,6 @@
     ;; set col-obj x y
     (if-let [[obj :as collisions] (doall (filter-collisions player-collision collision-sys))]
       (do
-        (prn collisions)
         (when (not pause-collisions?)
           (let [[_action room target] (.-action obj)
                 {:keys [ratio width mesh]} (get rooms room)
@@ -324,10 +323,10 @@
         (scene-swap! assoc :pause-collisions? false)))))
 
 (defmethod handle-event :invasie [{:keys [player path-handler rooms room]} [t e]]
-  (let [coords (if (:clientX e) e (first (:touches e)))
-        destination (viewport->world (p/point (:clientX coords)
-                                              (:clientY coords)))]
-    (daedalus/set-destination path-handler (:x destination) (:y destination))))
+  (p/let [{:keys [touches]} ^js e
+          {:keys [clientX clientY]} ^js (if touches (first touches) e)
+          {:keys [x y]} (viewport->world (p/point clientX clientY))]
+    (daedalus/set-destination path-handler x y)))
 
 (def no-clean-ns nil)
 
@@ -369,5 +368,7 @@
             [0,3.8821203284288686]]]
      (apply p/point x))
    )
+
+  (j/get  (last (seq sprite-layer)) :inventory?)
 
   )
