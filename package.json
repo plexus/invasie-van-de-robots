@@ -6,6 +6,7 @@
     "collisions": "^2.0.13",
     "hammerjs": "^2.0.8",
     "hxdaedalus-js": "^1.0.1",
+    "inkjs": "^1.11.0",
     "pixi-plugin-bump": "^1.1.8",
     "pixi.js": "^5.3.9",
     "react": "17.0.1",

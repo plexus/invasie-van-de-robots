@@ -255,6 +255,7 @@
   rect elements are parsed to pixi/Point / pixi/Rectangle coordinates and added
   as `:path` / `:rect` respectively."
   [svg]
+  (prn svg)
   (let [elements
         (->> (query-all svg "desc")
              (map #(.-parentNode %))

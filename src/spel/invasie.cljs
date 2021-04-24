@@ -22,7 +22,12 @@
 
 (def svg-url "images/invasie_van_de_robots.svg")
 
-(def debug? true)
+(def images {:ventje1 "images/ventje1x.png"
+             :ventje2 "images/ventje2x.png"
+             :ventje3 "images/ventje3x.png"
+             :ventje4 "images/ventje4x.png"})
+
+(def debug? false)
 
 (defn show-text [text]
   (let [box (thicc/el-by-id "text-box")]
@@ -51,17 +56,21 @@
                            (- (:x player) (/ viewport-max 2))
                            (- bg-width viewport-max))))))
 
+(defn room-data
+  ([]
+   (room-data (scene-state)))
+  ([scene]
+   (get (:rooms scene) (:room scene))))
 
-(defn enter-room [{:keys [sprites room rooms inventory]}]
+(defn enter-room [{:keys [sprites room inventory player] :as scene}]
   (draw-background (get sprites room))
-  (let [player (:player sprites)
-        {:keys [player-size items]} (get rooms room)
+  (let [{:keys [player-size items]} (room-data scene)
         player-scale (/ player-size (:height (:texture player)))]
     (center-around-player player)
     (p/assign! player {:scale {:x player-scale :y player-scale}})
 
     (doseq [sprite sprite-layer
-            :when (not= sprite player)]
+            :when (j/get sprite :inventory?)]
       (disj! sprite-layer sprite))
 
     (doseq [{:keys [item rect] :as item-data} items
@@ -159,8 +168,9 @@
           :items            items})))))
 
 (defmethod load-scene :invasie [scene]
-  (promise/let [svg (svg/fetch-svg svg-url)
-                elements (svg/elements svg)]
+  (p/let [svg ^await (svg/fetch-svg svg-url)
+          elements ^await (svg/elements svg)
+          images ^await (p/load-resources! app images)]
     (let [start      (:start elements)
           sprites    (->> elements
                           vals
@@ -172,21 +182,22 @@
           rooms      (into {}
                            (map (juxt :id identity))
                            (build-rooms elements sprites))
-          player     (doto (puck-daedalus/with-radius (:player sprites) 20)
+          ventje     (p/animated-sprite (map :texture (vals images)))
+          player     (doto (puck-daedalus/with-radius ventje 20)
                        (p/assign!
                         {:anchor   {:x 0.5 :y 1}
-                         :position (doto (m/v* (doto (:point start) prn)
-                                               (get-in rooms [start-room :ratio]))
-                                     prn)}))
+                         :player?  true
+                         :animationSpeed 0.2
+                         :position (m/v* (doto (:point start) prn)
+                                         (get-in rooms [start-room :ratio]))}))
 
           debug-graphics (p/graphics)
           path-handler   (daedalus/path-handler
                           {:entity            player
                            :mesh              (get-in rooms [start-room :mesh])
                            :view              (puck-daedalus/simple-view debug-graphics)
-                           :sampling-distance 20})
-          ui-graphics (p/graphics)]
-
+                           :sampling-distance 12})
+          ui-graphics    (p/graphics)]
       (assoc scene
              :player player
              :room start-room
@@ -199,7 +210,7 @@
              :ui-size 0.1
              :inventory [:hand]))))
 
-(defn draw-inventory [{:keys [ui-graphics inventory sprites]}]
+(defn draw-inventory [{:keys [ui-graphics inventory sprites player]}]
   (p/with-fill [ui-graphics {:color 0xf5c842}]
     (p/rect ui-graphics 0 0 10000 100))
 
@@ -217,7 +228,9 @@
                          :y 15
                          :scale {:x scale :y scale}
                          :interactive true
-                         :buttonMode true})
+                         :buttonMode true
+                         :inventory? true})
+
       (p/listen!
        sprite
        [:mousedown :touchstart]
@@ -246,7 +259,7 @@
            (let [{:keys [x y width height]} (p/bounds item-sprite)
                  center {:x (+ x (/ width 2))
                          :y (+ y (/ height 2))}]
-             (if (< 400 (m/distance (:player sprites) center))
+             (if (< 400 (m/distance player center))
                (flash-text "Je bent te ver")
                (scene-swap! update :inventory conj (:id item-sprite)))))
          (draw-inventory (scene-state)))))))
@@ -273,11 +286,21 @@
                                         pause-collisions?]
                                  :as state}]
   (let [{:keys [player-collision collision-sys]
-         :as room} (get rooms room)]
-    (daedalus/next! path-handler)
-    (j/assoc! player-collision
-              :x (:x player)
-              :y (:y player))
+         :as room} (get rooms room)
+        x-before (:x player)]
+    (if (daedalus/next? path-handler)
+      (do
+        (daedalus/next! path-handler)
+        (j/assoc! player-collision
+                  :x (:x player)
+                  :y (:y player))
+        (when-not (:playing player)
+          (p/play! player))
+        (when (not= (< 0 (- (:x player) x-before))
+                    (< 0 (:x (:scale player))))
+          (p/assign! player {:scale {:x (- (:x (:scale player)))}})))
+
+      (p/stop! player))
     (debug-draw state room)
     (center-around-player player)
 
@@ -317,4 +340,34 @@
 
   (:player (:sprites (scene-state)))
   (:slaapkamerdeur2 (:elements (scene-state)))
+
+  (load-scene (scene-state))
+
+  (tap> (:player (scene-state)))
+
+  (count (seq sprite-layer))
+
+  (tap> (seq sprite-layer))
+
+  (conj! sprite-layer (:player (scene-state)))
+  (p/play!  (:player (scene-state)))
+
+  (p/assign! (:player (scene-state))
+             {:animationSpeed 0.1})
+
+  (def xxx (:textures (:player (scene-state))))
+  (:playing (:player (scene-state)))
+  (p/assign! (:player (scene-state)) {:textures (into-array (take 2 xxx))})
+  (.play )
+  (count   (seq sprite-layer))
+
+  (tap> (:collision-sys (room-data)))
+
+  (m/clockwise?
+   (for [x [[132.57216927373986 367.47287563137064]
+            [122.0209423591 0]
+            [0,3.8821203284288686]]]
+     (apply p/point x))
+   )
+
   )

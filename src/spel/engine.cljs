@@ -16,38 +16,43 @@
             [lambdaisland.glogi :as log]
             [spel.svg :as svg]))
 
-(defonce state (atom {:time 0
-                      :scenes {}
-                      :sprites {}}))
+(defonce state (atom {}))
 
 (def world-height 1000)
 (def ui-height 100)
 (def achtergrond-kleur 0x000000)
 
-(defonce app (p/full-screen-app {}))
-(defonce renderer (:renderer app))
-(j/assoc! renderer :backgroundColor "#000000")
+(declare app renderer stage bg-graphics fill-layer bg-layer sprite-layer viewport world ui-layer)
 
-;; stage
-;; ├── fill-layer
-;; │   └── bg-graphics
-;; └── world
-;;    └── viewport
-;;      ├── bg-layer
-;;      └── sprites
-(defonce stage (:stage app))
+(defn setup-app []
+  (set! app (p/full-screen-app {}))
+  (set! renderer (:renderer app))
+  (j/assoc! renderer :backgroundColor "#000000")
 
-(defonce bg-graphics (p/graphics))
-(defonce fill-layer (p/container {} bg-graphics))
+  ;; stage
+  ;; ├── fill-layer
+  ;; │   └── bg-graphics
+  ;; └── world
+  ;;    └── viewport
+  ;;      ├── bg-layer
+  ;;      └── sprites
+  (set! stage (:stage app))
 
-(defonce bg-layer (p/container {}))
-(defonce sprite-layer (p/container {}))
-(defonce ui-layer (p/container {}))
+  (set! bg-graphics (p/graphics))
+  (set! fill-layer (p/container {} bg-graphics))
 
-(defonce viewport (p/container {} bg-layer sprite-layer))
-(defonce world (p/container {} viewport))
+  (set! bg-layer (p/container {}))
+  (set! sprite-layer (p/container {}))
+  (set! ui-layer (p/container {}))
 
-(defonce add-layers-once (conj! stage fill-layer world ui-layer))
+  (set! viewport (p/container {} bg-layer sprite-layer))
+  (set! world (p/container {} viewport))
+
+  (conj! stage fill-layer world ui-layer)
+
+  (reset! state {:time 0
+                 :scenes {}
+                 :sprites {}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Life cycle
@@ -174,6 +179,7 @@
   (get-in @state [:sprites name]))
 
 (defn init! []
+  (setup-app)
   (resize-pixi)
   (p/listen! app :resize resize-pixi)
   (p/pixelate!)
