@@ -201,7 +201,8 @@
   (doseq [t [:click :touchstart]]
     (p/listen! (first (js/document.getElementsByTagName "canvas"))
                (name t) t
-               (fn [e] (handle-event (scene-state) [t e])))))
+               (fn [e]
+                 (handle-event (scene-state) [t e])))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -239,3 +240,8 @@
   (collisions/update! system)
   (seq (filter #(collisions/collides? coll-obj % coll-res)
                (collisions/potentials coll-obj))))
+
+(defn search-params []
+  (js/URLSearchParams. js/window.location.search))
+
+(defn query-param [k] (.get ^js (search-params) k))

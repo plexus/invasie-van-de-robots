@@ -19,7 +19,8 @@ spel.invasie/no-clean-ns
 spel.main-menu/no-clean-ns
 
 (glogi-console/install!)
-(log/set-levels {:glogi/root :all})
+(log/set-levels '{:glogi/root :all
+                  spel.svg :off})
 
 (j/assoc! engine/stage :filters
           #js [#_(doto (pixi/filters.ColorMatrixFilter.) (.polaroid))
@@ -31,11 +32,6 @@ spel.main-menu/no-clean-ns
 (j/assoc! engine/bg-layer :filters
           [(pixelate/PixelateFilter. 10)])
 
-(defn search-params []
-  (js/URLSearchParams. js/window.location.search))
-
-(defn query-param [k] (.get ^js (search-params) k))
-
 (defn init! [scene]
   (promise/do
     (engine/init!)
@@ -44,14 +40,16 @@ spel.main-menu/no-clean-ns
     (engine/mount-canvas!)
     (engine/add-dom-handlers!)))
 
-(defonce init-once (init! (keyword (or (query-param "scene") "main-menu"))))
+(defonce init-once (init! (keyword (or (engine/query-param "scene") "main-menu"))))
 
 (defn on-hot-reload []
   (log/info :hot-reload! {})
   (run! #(.remove %) (thicc/query-all "canvas"))
   (init! (:scene (engine/scene-state)))
+
   #_(engine/stop-scene (engine/scene-state))
   #_(engine/start-scene (engine/scene-state)))
+
 
 (comment
   (engine/goto-scene :maniac-mansion))

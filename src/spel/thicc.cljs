@@ -79,7 +79,12 @@
    (.cloneNode el deep?)))
 
 (defn remove-children [el]
-  (replace-child (parent el) el (clone-node el false)))
+  (let [new-el (clone-node el false)]
+    (replace-child (parent el) el new-el)
+    new-el))
+
+(defn clear! [el]
+  (set! (.-innerHTML el) ""))
 
 ;; Hiccup
 

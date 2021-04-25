@@ -9,16 +9,20 @@
             [lambdaisland.puck.daedalus :as puck-daedalus]
             [lambdaisland.puck.math :as m]
             [spel.thicc :as thicc]
+            [spel.ink :as ink]
             [spel.svg :as svg]
-            [spel.engine :refer [app bg-layer draw-background
-                                 handle-event load-scene scene-state
-                                 scene-swap! sprite-layer ui-layer
-                                 start-scene stop-scene tick-scene
-                                 viewport pan-viewport viewport->world
-                                 visible-world-width
-                                 goto-scene
-                                 world-height clamp
-                                 filter-collisions]]))
+            [spel.engine
+             :as engine
+             :refer [app bg-layer draw-background
+                     handle-event load-scene scene-state
+                     scene-swap! sprite-layer ui-layer
+                     start-scene stop-scene tick-scene
+                     viewport pan-viewport viewport->world
+                     visible-world-width
+                     goto-scene
+                     world-height clamp
+                     filter-collisions]])
+  (:require-macros [spel.ink :refer [inline-file]]))
 
 (def svg-url "images/invasie_van_de_robots.svg")
 
@@ -28,6 +32,8 @@
              :ventje4 "images/ventje4x.png"})
 
 (def debug? false)
+
+(def story (ink/story (subs (inline-file "resources/public/scenario.json") 1)))
 
 (defn show-text [text]
   (let [box (thicc/el-by-id "text-box")]
@@ -42,7 +48,24 @@
   (show-text text)
   (js/setTimeout hide-text 2000))
 
-
+(defn story-next []
+  (let  [box (thicc/el-by-id "text-box")]
+    (if (or (ink/can-continue? story)
+            (seq (ink/choices story)))
+      (do
+        (thicc/clear! box)
+        (if (ink/can-continue? story)
+          (let [text (ink/continue! story)]
+            (conj! box (thicc/dom [:a {:on-click #(story-next)} text])))
+          (conj! box (thicc/dom
+                      [:div
+                       [:p "KEUZES"]
+                       (for [{:keys [text index] :as choice} (ink/choices story)]
+                         [:p [:a {:on-click #(do
+                                               (ink/make-choice! story index)
+                                               (story-next))} "- " text]])])))
+        (j/assoc-in! box [:style :display] "block"))
+      (j/assoc-in! box [:style :display] "none"))))
 
 (defn center-around-player [player]
   ;; Keep the viewport centered on Player, clamping on the sides. Note that
@@ -62,16 +85,47 @@
   ([scene]
    (get (:rooms scene) (:room scene))))
 
-(defn enter-room [{:keys [sprites room inventory player] :as scene}]
-  (draw-background (get sprites room))
-  (let [{:keys [player-size items]} (room-data scene)
+(defn enter-room [{:keys [sprites room inventory player path-handler] :as scene}]
+  (let [bg  (get sprites room)]
+    (draw-background bg)
+    (p/assign! bg {:interactive true})
+    (p/listen!
+     bg
+     [:click :touchstart]
+     (fn [e]
+       (let [{:keys [x y]} (p/local-position (j/get e :data) bg-layer)]
+         (daedalus/set-destination path-handler x y)))))
+
+  (let [{:keys [player-size items npcs elements]} (room-data scene)
         player-scale (/ player-size (:height (:texture player)))]
     (center-around-player player)
     (p/assign! player {:scale {:x player-scale :y player-scale}})
 
     (doseq [sprite sprite-layer
-            :when (j/get sprite :inventory?)]
+            :when (or (j/get sprite :inventory?)
+                      (j/get sprite :npc?))]
       (disj! sprite-layer sprite))
+
+    (doseq [{:keys [id rect dialogue] :as npc} npcs
+            :let [{:keys [texture] :as sprite} (get sprites id)
+                  {:keys [width height]} texture
+                  scale (/ (:height rect) (:height texture))]]
+      (conj! sprite-layer sprite)
+      (p/assign! sprite {:x (:x rect)
+                         :y (:y rect)
+                         :scale {:x scale :y scale}
+                         :data npc
+                         :npc? true
+                         :interactive true})
+      (when dialogue
+        (p/listen!
+         sprite
+         [:click :touchstart]
+         (fn [_]
+           (when-let [{{:keys [x y]} :point} (get elements (keyword (str (name id) "-dialogue-spot")))]
+             (daedalus/set-destination path-handler x y))
+           (ink/goto-path! story dialogue)
+           (story-next)))))
 
     (doseq [{:keys [item rect] :as item-data} items
             :when (not (some #{item} inventory))
@@ -135,11 +189,19 @@
              width            (* (:width rect) ratio)
              elements         (->> elements
                                    vals
-                                   (filter (comp #{id} :origin)))
+                                   (filter (comp #{id} :origin))
+                                   (map (fn [v]
+                                          (if (:point v)
+                                            (update v :point #(scale-to-room ratio %))
+                                            v))))
              obstacles        (->> elements
                                    (filter (comp #{:obstacle} :type))
                                    (map :path)
                                    (scale-to-room ratio))
+             npcs             (->> elements
+                                   (filter (comp #{:npc} :type))
+                                   (map (fn [npc]
+                                          (update npc :rect #(scale-to-room ratio %)))))
              collision-objs   (->> elements
                                    (filter (comp #{:collision} :type))
                                    (map (fn [obj]
@@ -158,6 +220,7 @@
                                           (update i :rect #(scale-to-room ratio %)))))]
          {:id               id
           :sprite           (get sprites id)
+          :elements         (into {} (map (juxt :id identity)) elements)
           :ratio            ratio
           :width            width
           :player-collision player-collision
@@ -165,6 +228,7 @@
                               (* (:height player-size) ratio))
           :collision-sys    (build-collision-system player-collision collision-objs)
           :obstacles        obstacles
+          :npcs             npcs
           :mesh             (build-mesh width obstacles)
           :items            items})))))
 
@@ -179,7 +243,8 @@
                           (map (fn [{:keys [id texture]}]
                                  [id (j/assoc! (p/sprite texture) :id id)]))
                           (into {}))
-          start-room (:origin start)
+          start-room (keyword (or (engine/query-param "room")
+                                  (name (:origin start))))
           rooms      (into {}
                            (map (juxt :id identity))
                            (build-rooms elements sprites))
@@ -211,7 +276,7 @@
              :ui-size 0.1
              :inventory [:hand]))))
 
-(defn draw-inventory [{:keys [ui-graphics inventory sprites player]}]
+(defn draw-inventory [{:keys [ui-graphics inventory sprites player path-handler]}]
   (p/with-fill [ui-graphics {:color 0xf5c842}]
     (p/rect ui-graphics 0 0 10000 100))
 
@@ -322,11 +387,12 @@
       (when pause-collisions?
         (scene-swap! assoc :pause-collisions? false)))))
 
-(defmethod handle-event :invasie [{:keys [player path-handler rooms room]} [t e]]
-  (p/let [{:keys [touches]} ^js e
-          {:keys [clientX clientY]} ^js (if touches (first touches) e)
-          {:keys [x y]} (viewport->world (p/point clientX clientY))]
-    (daedalus/set-destination path-handler x y)))
+#_(defmethod handle-event :invasie [{:keys [player path-handler rooms room]} [t e]]
+    (p/let [{:keys [touches]} ^js e
+            {:keys [clientX clientY]} ^js (if touches (first touches) e)
+            {:keys [x y]} (viewport->world (p/point clientX clientY))]
+      (prn [:dest x y])
+      (daedalus/set-destination path-handler x y)))
 
 (def no-clean-ns nil)
 
@@ -370,5 +436,6 @@
    )
 
   (j/get  (last (seq sprite-layer)) :inventory?)
-
   )
+#_
+(daedalus/set-destination (:path-handler (scene-state)) 396.5718362744595 851.2401834450363)
