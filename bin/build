@@ -8,3 +8,4 @@ cp -r resources/public/* docs
 sed "s/main.js/main.js?$(bb -e '(System/currentTimeMillis)')/" -i docs/index.html
 git add docs
 git commit -m 'Build new version'
+git push
