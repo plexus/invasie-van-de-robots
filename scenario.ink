@@ -1,4 +1,17 @@
+
 De wereld is overgenomen door robots, maar jij bent kunnen ontsnappen door je te verstoppen in de kast. Baan je een weg naar de ruimtebasis van de gemene Professor die de robots bestuurd, om de wereld te redden.
+
+-> END
+
+=== intro ===
+
+ROBOT: HIER IS NIEMAND MEER. TIJD OM VERSLAG UIT TE BRENGEN BIJ DE BAAS.
+ANDERE ROBOT: GOED WERK! ALLE VLEESZAKKEN ZITTEN GEVANGEN. DE AARDE IS NU VAN DE ROBOTS!
+ROBOT: MOCHT ER TOCH NOG IEMAND OPDUIKEN, DAN NEMEN WE DIE DAN WEL TE GRAZEN. HAHAHAHAHA
+>>> robots verlaten kamer
+>>> kast gaat open
+SPELER: Oef, ze hebben me niet gezien, maar wat nu?
+SPELER: Ik moet mijn vrienden redden! Maar eerst moet ik veilig het huis uit kunnen komen.
 
 -> END
 

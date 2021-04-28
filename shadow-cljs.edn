@@ -2,7 +2,7 @@
  {:aliases [:dev]}
 
  :dev-http
- {8000 "classpath:public"}
+ {8042 "classpath:public"}
 
  :builds
  {:main

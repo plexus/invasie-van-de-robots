@@ -1,6 +1,7 @@
 (ns spel.invasie
   (:require ["pixi.js" :as pixi]
             [applied-science.js-interop :as j]
+            [clojure.string :as str]
             [kitchen-async.promise :as promise]
             [lambdaisland.daedalus :as daedalus]
             [lambdaisland.glogi :as log]
@@ -8,9 +9,6 @@
             [lambdaisland.puck.collisions :as collisions]
             [lambdaisland.puck.daedalus :as puck-daedalus]
             [lambdaisland.puck.math :as m]
-            [spel.thicc :as thicc]
-            [spel.ink :as ink]
-            [spel.svg :as svg]
             [spel.engine
              :as engine
              :refer [app bg-layer draw-background
@@ -21,7 +19,10 @@
                      visible-world-width
                      goto-scene
                      world-height clamp
-                     filter-collisions]])
+                     filter-collisions]]
+            [spel.ink :as ink]
+            [spel.svg :as svg]
+            [spel.thicc :as thicc])
   (:require-macros [spel.ink :refer [inline-file]]))
 
 (def svg-url "images/invasie_van_de_robots.svg")
@@ -29,15 +30,22 @@
 (def images {:ventje1 "images/ventje1x.png"
              :ventje2 "images/ventje2x.png"
              :ventje3 "images/ventje3x.png"
-             :ventje4 "images/ventje4x.png"})
-
-(def debug? false)
+             :ventje4 "images/ventje4x.png"
+             :wheelbot "images/wheelbot9000.png"})
 
 (def story (ink/story (subs (inline-file "resources/public/scenario.json") 1)))
+
+(declare run-components! story-next on-cue)
 
 (defn show-text [text]
   (let [box (thicc/el-by-id "text-box")]
     (j/assoc! box :innerText text)
+    (j/assoc-in! box [:style :display] "block")))
+
+(defn show-html [html]
+  (let [box (thicc/el-by-id "text-box")]
+    (thicc/clear! box)
+    (conj! box (thicc/dom html))
     (j/assoc-in! box [:style :display] "block")))
 
 (defn hide-text []
@@ -48,97 +56,247 @@
   (show-text text)
   (js/setTimeout hide-text 2000))
 
-(defn story-next []
-  (let  [box (thicc/el-by-id "text-box")]
-    (if (or (ink/can-continue? story)
-            (seq (ink/choices story)))
-      (do
-        (thicc/clear! box)
-        (if (ink/can-continue? story)
-          (let [text (ink/continue! story)]
-            (conj! box (thicc/dom [:a {:on-click #(story-next)} text])))
-          (conj! box (thicc/dom
-                      [:div
-                       [:p "KEUZES"]
-                       (for [{:keys [text index] :as choice} (ink/choices story)]
-                         [:p [:a {:on-click #(do
-                                               (ink/make-choice! story index)
-                                               (story-next))} "- " text]])])))
-        (j/assoc-in! box [:style :display] "block"))
-      (j/assoc-in! box [:style :display] "none"))))
-
-(defn center-around-player [player]
-  ;; Keep the viewport centered on Player, clamping on the sides. Note that
-  ;; our "viewport" works by shifting a base layer in the opposite
-  ;; direction, so movements are negative
-  (let [bg-width (:width (p/local-bounds bg-layer))
-        viewport-max (visible-world-width)]
-    (if (< bg-width viewport-max)
-      (pan-viewport (/ (- bg-width viewport-max) 2))
-      (pan-viewport (clamp 0
-                           (- (:x player) (/ viewport-max 2))
-                           (- bg-width viewport-max))))))
-
-(defn room-data
+(defn room-state
   ([]
-   (room-data (scene-state)))
+   (room-state (scene-state)))
   ([scene]
    (get (:rooms scene) (:room scene))))
 
-(defn enter-room [{:keys [sprites room inventory player path-handler] :as scene}]
-  (let [bg  (get sprites room)]
-    (draw-background bg)
-    (p/assign! bg {:interactive true})
-    (p/listen!
-     bg
-     [:click :touchstart]
-     (fn [e]
-       (let [{:keys [x y]} (p/local-position (j/get e :data) bg-layer)]
-         (daedalus/set-destination path-handler x y)))))
 
-  (let [{:keys [player-size items npcs elements]} (room-data scene)
-        player-scale (/ player-size (:height (:texture player)))]
-    (center-around-player player)
-    (p/assign! player {:scale {:x player-scale :y player-scale}})
+(defn story-next []
+  (cond
+    (ink/can-continue? story)
+    (let [text (ink/continue! story)]
+      (if (str/starts-with? text ">>>")
+        (do
+          (hide-text)
+          (on-cue (str/trim (str/replace text #">" ""))))
+        (show-html [:a {:on-click #(story-next)} text])))
 
-    (doseq [sprite sprite-layer
-            :when (or (j/get sprite :inventory?)
-                      (j/get sprite :npc?))]
-      (disj! sprite-layer sprite))
+    (seq (ink/choices story))
+    (show-html [:div
+                [:p "KEUZES"]
+                (for [{:keys [text index] :as choice} (ink/choices story)]
+                  [:p [:a {:on-click #(do
+                                        (ink/make-choice! story index)
+                                        (story-next))} "- " text]])])
+    :else
+    (hide-text)))
 
-    (doseq [{:keys [id rect dialogue] :as npc} npcs
-            :let [{:keys [texture] :as sprite} (get sprites id)
-                  {:keys [width height]} texture
-                  scale (/ (:height rect) (:height texture))]]
-      (conj! sprite-layer sprite)
-      (p/assign! sprite {:x (:x rect)
-                         :y (:y rect)
-                         :scale {:x scale :y scale}
-                         :data npc
-                         :npc? true
-                         :interactive true})
-      (when dialogue
-        (p/listen!
-         sprite
-         [:click :touchstart]
-         (fn [_]
-           (when-let [{{:keys [x y]} :point} (get elements (keyword (str (name id) "-dialogue-spot")))]
-             (daedalus/set-destination path-handler x y))
-           (ink/goto-path! story dialogue)
-           (story-next)))))
 
-    (doseq [{:keys [item rect] :as item-data} items
-            :when (not (some #{item} inventory))
-            :let [{:keys [texture] :as sprite} (get sprites item)
-                  {:keys [width height]} texture
-                  scale (min (/ (:heigt rect) height)
-                             (/ (:width rect) width))]]
-      (conj! sprite-layer sprite)
-      (p/assign! sprite {:x (:x rect)
-                         :y (:y rect)
-                         :scale {:x scale :y scale}
-                         :item item-data
-                         :inventory? true}))))
+(defmulti handle-room :room)
+(defmethod handle-room :default [scene])
+
+(def +background
+  {:enter (fn [{:keys [sprites room path-handler player]}]
+            (let [bg (get sprites room)]
+              (draw-background bg)))
+   :leave (fn [_]
+            (prn "leave background")
+            (p/remove-children bg-layer))})
+
+(def +player
+  {:enter (fn [{:keys [sprites room path-handler player]}]
+            (conj! sprite-layer player)
+            (let [bg (get sprites room)]
+              (draw-background bg)
+              (p/assign! bg {:interactive true})
+              (p/listen!
+               bg
+               [:click :touchstart]
+               (fn [e]
+                 (let [{:keys [x y]} (p/local-position (j/get e :data) bg-layer)]
+                   (daedalus/set-destination path-handler x y))))))
+   :leave (fn [{:keys [player]}]
+            (disj! sprite-layer player))
+   :tick (fn [{:keys [player path-handler] :as scene} delta]
+           (let [{:keys [player-collision collision-sys]
+                  :as room} (room-state scene)
+                 x-before (:x player)]
+             (if (daedalus/next? path-handler)
+               (do
+                 (daedalus/next! path-handler)
+                 (j/assoc! player-collision
+                           :x (:x player)
+                           :y (:y player))
+                 (when-not (:playing player)
+                   (p/play! player))
+                 (when (not= (< 0 (- (:x player) x-before))
+                             (< 0 (:x (:scale player))))
+                   (p/assign! player {:scale {:x (- (:x (:scale player)))}})))
+
+               (p/stop! player))))})
+
+(def +debug
+  {:enter (fn [{:keys [debug-graphics]}]
+            (conj! sprite-layer debug-graphics))
+   :leave (fn [{:keys [debug-graphics]}]
+            (disj! sprite-layer debug-graphics))
+   :tick (let [debug-count (atom 0)]
+           (fn [scene delta]
+             (let [{:keys [debug-graphics path-handler]} scene
+                   {:keys [collision-sys]} (room-state scene)]
+               (when (= 0 (mod (swap! debug-count inc) 10))
+                 (daedalus/debug-draw path-handler)
+                 (.draw collision-sys debug-graphics)))))})
+
+(def +collisions
+  {:tick (fn [scene delta]
+           (let [{:keys [player pause-collisions? rooms elements path-handler]} scene
+                 {:keys [player-collision collision-sys]} (room-state scene)
+                 x-before (:x player)]
+
+             ;; set col-obj x y
+             (if-let [[obj :as collisions] (doall (filter-collisions player-collision collision-sys))]
+               (do
+                 (when (not pause-collisions?)
+                   (let [[_action target-room target] (.-action obj)
+                         ;; (when (= :goto-room action))
+                         {:keys [ratio width mesh]} (get rooms target-room)
+                         rect (get-in elements [target :rect])
+                         player-x (* (+ (:x rect) (/ (:width rect) 2)) ratio)
+                         player-y (* (+ (:y rect) (:height rect)) ratio)]
+                     (daedalus/set-mesh path-handler mesh)
+                     (daedalus/set-location path-handler player-x player-y)
+                     (run-components! :leave (scene-state))
+                     (scene-swap! assoc
+                                  :room target-room
+                                  :pause-collisions? true)
+                     (run-components! :enter (scene-state)))))
+               (when pause-collisions?
+                 (scene-swap! assoc :pause-collisions? false)))))})
+
+(def +npcs
+  {:enter (fn [scene]
+            (let [{:keys [sprites path-handler elements]} scene
+                  {:keys [npcs]} (room-state scene)]
+              (doseq [{:keys [id rect dialogue] :as npc} npcs
+                      :let [{:keys [texture] :as sprite} (get sprites id)
+                            {:keys [width height]} texture
+                            scale (/ (:height rect) (:height texture))]]
+                (conj! sprite-layer sprite)
+                (p/assign! sprite {:x (:x rect)
+                                   :y (:y rect)
+                                   :scale {:x scale :y scale}
+                                   :data npc
+                                   :npc? true
+                                   :interactive true})
+                (when dialogue
+                  (p/listen!
+                   sprite
+                   [:click :touchstart]
+                   (fn [_]
+                     (when-let [{{:keys [x y]} :point} (get elements (keyword (str (name id) "-dialogue-spot")))]
+                       (daedalus/set-destination path-handler x y))
+                     (ink/goto-path! story dialogue)
+                     (story-next)))))))
+   :tick (fn [scene delta]
+           (doseq [sprite sprite-layer
+                   :when (j/get sprite :npc?)
+                   :let [path-handler (j/get sprite :path-handler)]
+                   :when path-handler]
+             (if (daedalus/next? path-handler)
+               (daedalus/next! path-handler)
+               (when (j/get sprite :on-arrival)
+                 ((j/get sprite :on-arrival) sprite)))))
+   :leave (fn [scene]
+            (let [{:keys [sprites]} scene
+                  {:keys [npcs]} (room-state scene)]
+              (doseq [npc npcs]
+                (disj! sprite-layer (get sprites (:id npc))))))})
+
+(def +items
+  {:enter (fn [scene]
+            (let [{:keys [sprites path-handler elements inventory]} scene
+                  {:keys [items]} (room-state scene)]
+              (doseq [{:keys [item rect] :as item-data} items
+                      :when (not (some #{item} inventory))
+                      :let [{:keys [texture] :as sprite} (get sprites item)
+                            {:keys [width height]} texture
+                            scale (min (/ (:heigt rect) height)
+                                       (/ (:width rect) width))]]
+                (conj! sprite-layer sprite)
+                (p/assign! sprite {:x (:x rect)
+                                   :y (:y rect)
+                                   :scale {:x scale :y scale}
+                                   :item item-data
+                                   :inventory? true}))))
+   :leave (fn [scene]
+            (let [{:keys [sprites]} scene
+                  {:keys [items]} (room-state scene)]
+              (doseq [item items]
+                (disj! sprite-layer (get sprites (:item item))))))})
+
+(def +player-scale
+  {:enter
+   (fn [scene]
+     (let [{:keys [player]} scene
+           {:keys [player-size]} (room-state scene)
+           player-scale (/ player-size (:height (:texture player)))]
+       (p/assign! player {:scale {:x player-scale :y player-scale}})))})
+
+(def +camera
+  (let [center-around-player
+        (fn [{:keys [player]}]
+          ;; Keep the viewport centered on Player, clamping on the sides. Note that
+          ;; our "viewport" works by shifting a base layer in the opposite
+          ;; direction, so movements are negative
+          (let [bg-width (:width (p/local-bounds bg-layer))
+                viewport-max (visible-world-width)]
+            (if (< bg-width viewport-max)
+              (pan-viewport (/ (- bg-width viewport-max) 2))
+              (pan-viewport (clamp 0
+                                   (- (:x player) (/ viewport-max 2))
+                                   (- bg-width viewport-max))))))]
+    {:enter center-around-player
+     :tick center-around-player}))
+
+(def +intro
+  {:enter (fn [{:keys [images story]}]
+            (let [robot1 (-> (get images :wheelbot)
+                             :texture
+                             p/sprite
+                             (puck-daedalus/with-radius 20))
+                  robot2 (-> (get images :wheelbot)
+                             :texture
+                             p/sprite
+                             (puck-daedalus/with-radius 20))
+                  {:keys [mesh]} (room-state)
+                  scale 0.3
+                  h1 (daedalus/path-handler {:entity            robot1
+                                             :mesh              mesh
+                                             :sampling-distance 8})
+                  h2 (daedalus/path-handler {:entity            robot2
+                                             :mesh              mesh
+                                             :sampling-distance 8})]
+              (p/assign! robot1 {:id :wheelbot1
+                                 :anchor {:x 0.5 :y 1}
+                                 :scale {:x (- scale) :y scale}
+                                 :npc? true
+                                 :path-handler h1})
+              (p/assign! robot2 {:id :wheelbot2
+                                 :anchor {:x 0.5 :y 1}
+                                 :scale {:x scale :y scale}
+                                 :npc? true
+                                 :path-handler h2})
+              (daedalus/set-location h1 500 900)
+              (daedalus/set-location h2 1200 850)
+              (conj! sprite-layer robot1 robot2)
+              (ink/goto-path! story "intro")
+              (story-next)))})
+
+(def standard-components
+  [+player-scale
+   +player
+   +collisions
+   +camera
+   +npcs
+   +items
+   #_   +debug])
+
+(defn run-components! [key scene & args]
+  (let [{:keys [components]} scene]
+    (run! #(apply % scene args) (keep key components))))
 
 (defn build-collision-system [player-collision-object collisions]
   (let [sys (collisions/system)]
@@ -180,6 +338,15 @@
              (* (:y obj) ratio))
     (sequential? obj)
     (map (partial scale-to-room ratio) obj)))
+
+(defn place-room-sprite! [sprite]
+  (let [rect (scale-to-room (:ratio (room-state))
+                            (j/get sprite :rect))
+        texture (j/get sprite :texture)
+        scale  (/ (:height rect) (:height texture))]
+    (p/assign! sprite {:x (:x rect)
+                       :y (:y rect)
+                       :scale {:x scale :y scale}})))
 
 (defn build-rooms [elements sprites]
   (let [rooms (->> elements vals (filter (comp #{:room} :type)))]
@@ -240,21 +407,24 @@
           sprites    (->> elements
                           vals
                           (filter :texture)
-                          (map (fn [{:keys [id texture]}]
-                                 [id (j/assoc! (p/sprite texture) :id id)]))
+                          (map (fn [{:keys [id texture rect] :as element}]
+                                 [id (j/assoc! (p/sprite texture)
+                                               :id id
+                                               :rect rect
+                                               :element element)]))
                           (into {}))
           start-room (keyword (or (engine/query-param "room")
                                   (name (:origin start))))
           rooms      (into {}
                            (map (juxt :id identity))
                            (build-rooms elements sprites))
-          ventje     (p/animated-sprite (map :texture (vals images)))
+          ventje     (p/animated-sprite (map (comp :texture images) [:ventje1 :ventje2 :ventje3 :ventje4]))
           player     (doto (puck-daedalus/with-radius ventje 20)
                        (p/assign!
                         {:anchor   {:x 0.5 :y 1}
                          :player?  true
                          :animationSpeed 0.2
-                         :position (m/v* (doto (:point start) prn)
+                         :position (m/v* (:point start)
                                          (get-in rooms [start-room :ratio]))}))
 
           debug-graphics (p/graphics)
@@ -274,15 +444,22 @@
              :debug-graphics debug-graphics
              :ui-graphics ui-graphics
              :ui-size 0.1
-             :inventory [:hand]))))
+             :inventory [:hand]
+             :images images
+             :intro-done? false
+             :story story
+             :components [+background
+                          +camera
+                          +intro
+                          +npcs]))))
 
 (defn draw-inventory [{:keys [ui-graphics inventory sprites player path-handler]}]
   (p/with-fill [ui-graphics {:color 0xf5c842}]
-    (p/rect ui-graphics 0 0 10000 100))
+    (p/draw-rect ui-graphics 0 0 10000 100))
 
   (dotimes [i 21]
     (p/with-fill [ui-graphics {:color 0}]
-      (p/rect ui-graphics (+ 5 (* 95 i)) 5 90 90)))
+      (p/draw-rect ui-graphics (+ 5 (* 95 i)) 5 90 90)))
 
   (doseq [[item idx] (map vector inventory (range))]
     (let [{:keys [texture] :as sprite} (get sprites item)
@@ -324,118 +501,56 @@
            (let [{:keys [x y width height]} (p/bounds item-sprite)
                  center {:x (+ x (/ width 2))
                          :y (+ y (/ height 2))}]
-             (if (< 400 (m/distance player center))
+             (if (< 150 (m/distance (p/bounds player) center))
                (flash-text "Je bent te ver")
                (scene-swap! update :inventory conj (:id item-sprite)))))
          (draw-inventory (scene-state)))))))
 
 (defmethod start-scene :invasie [{:keys [player debug-graphics ui-graphics]
                                   :as scene}]
-  (conj! sprite-layer player debug-graphics)
+
   (conj! ui-layer ui-graphics)
-  (enter-room scene)
+  (run-components! :enter scene)
   (draw-inventory scene))
 
-(let [debug-count (atom 0)]
-  (defn debug-draw [{:keys [debug-graphics path-handler]}
-                    {:keys [collision-sys]}]
-    (when (and debug? (= 0 (mod (swap! debug-count inc) 10)))
-      (daedalus/debug-draw path-handler)
-      (.draw collision-sys debug-graphics))))
+(defmethod tick-scene :invasie [{:keys [delta] :as scene}]
+  (run-components! :tick scene delta))
 
-(defmethod tick-scene :invasie [{:keys [delta player elements
-                                        path-handler
-                                        #_debug-graphics
-                                        rooms room
-                                        debug?
-                                        pause-collisions?]
-                                 :as state}]
-  (let [{:keys [player-collision collision-sys]
-         :as room} (get rooms room)
-        x-before (:x player)]
-    (if (daedalus/next? path-handler)
-      (do
-        (daedalus/next! path-handler)
-        (j/assoc! player-collision
-                  :x (:x player)
-                  :y (:y player))
-        (when-not (:playing player)
-          (p/play! player))
-        (when (not= (< 0 (- (:x player) x-before))
-                    (< 0 (:x (:scale player))))
-          (p/assign! player {:scale {:x (- (:x (:scale player)))}})))
+(defmethod handle-event :invasie [{:keys [player path-handler rooms room]} [t e]]
+  )
 
-      (p/stop! player))
-    (debug-draw state room)
-    (center-around-player player)
+(defmulti on-cue identity)
 
-    ;; set col-obj x y
-    (if-let [[obj :as collisions] (doall (filter-collisions player-collision collision-sys))]
-      (do
-        (when (not pause-collisions?)
-          (let [[_action room target] (.-action obj)
-                {:keys [ratio width mesh]} (get rooms room)
-                rect (get-in elements [target :rect])
-                player-x (* (+ (:x rect) (/ (:width rect) 2)) ratio)
-                player-y (* (+ (:y rect) (:height rect)) ratio)]
-            (daedalus/set-mesh path-handler mesh)
-            (daedalus/set-location path-handler player-x player-y)
-            (scene-swap! assoc
-                         :room room
-                         :pause-collisions? true)
-            (enter-room (scene-state)))))
-      (when pause-collisions?
-        (scene-swap! assoc :pause-collisions? false)))))
+(defmethod on-cue :default [cue]
+  (flash-text cue))
 
-#_(defmethod handle-event :invasie [{:keys [player path-handler rooms room]} [t e]]
-    (p/let [{:keys [touches]} ^js e
-            {:keys [clientX clientY]} ^js (if touches (first touches) e)
-            {:keys [x y]} (viewport->world (p/point clientX clientY))]
-      (prn [:dest x y])
-      (daedalus/set-destination path-handler x y)))
+(defmethod on-cue "robots verlaten kamer" [cue]
+  (prn cue)
+  (let [{:keys [mesh ratio]} (room-state)
+        {:keys [elements]}   (scene-state)
+        {:keys [x y]}        (scale-to-room ratio (get-in elements [:slaapkamer-ingang :rect]))
+
+        [bot1] (filter (comp #{:wheelbot1} #(j/get % :id)) sprite-layer)
+        [bot2] (filter (comp #{:wheelbot2} #(j/get % :id)) sprite-layer)]
+    (p/assign! bot2 {:scale {:x (- (j/get-in bot2 [:scale :x]))}})
+    (js/setTimeout (fn []
+                     (daedalus/set-destination (j/get bot1 :path-handler) x y)
+                     (daedalus/set-destination (j/get bot2 :path-handler) x y)
+                     (j/assoc! bot1 :on-arrival #(do (disj! sprite-layer %)
+                                                     (js/setTimeout story-next 2000)))
+                     (j/assoc! bot2 :on-arrival #(disj! sprite-layer %)))
+                   1000)))
+
+(defmethod on-cue "kast gaat open" [cue]
+  (prn cue)
+  (let [sprite (:open-kast (:sprites (scene-state)))]
+    (place-room-sprite! sprite)
+    (conj! bg-layer sprite))
+  (js/setTimeout (fn []
+                   (scene-swap! (fn [scene]
+                                  (assoc scene :components standard-components)))
+                   (run-components! :enter (scene-state))
+                   (js/setTimeout story-next 500))
+                 500))
 
 (def no-clean-ns nil)
-
-(comment
-  (goto-scene :invasie)
-  (draw-inventory (scene-state))
-  (:inventory (scene-state))
-  (:width (:texture (:hand (:sprites (scene-state)))))
-  (scene-swap! update :inventory conj :postnl)
-
-  (:player (:sprites (scene-state)))
-  (:slaapkamerdeur2 (:elements (scene-state)))
-
-  (load-scene (scene-state))
-
-  (tap> (:player (scene-state)))
-
-  (count (seq sprite-layer))
-
-  (tap> (seq sprite-layer))
-
-  (conj! sprite-layer (:player (scene-state)))
-  (p/play!  (:player (scene-state)))
-
-  (p/assign! (:player (scene-state))
-             {:animationSpeed 0.1})
-
-  (def xxx (:textures (:player (scene-state))))
-  (:playing (:player (scene-state)))
-  (p/assign! (:player (scene-state)) {:textures (into-array (take 2 xxx))})
-  (.play )
-  (count   (seq sprite-layer))
-
-  (tap> (:collision-sys (room-data)))
-
-  (m/clockwise?
-   (for [x [[132.57216927373986 367.47287563137064]
-            [122.0209423591 0]
-            [0,3.8821203284288686]]]
-     (apply p/point x))
-   )
-
-  (j/get  (last (seq sprite-layer)) :inventory?)
-  )
-#_
-(daedalus/set-destination (:path-handler (scene-state)) 396.5718362744595 851.2401834450363)

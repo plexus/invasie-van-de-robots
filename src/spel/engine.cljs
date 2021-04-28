@@ -192,7 +192,8 @@
                  (let [{:keys [loaded?] :as state} (scene-state)]
                    (when loaded? (tick-scene (assoc state :delta delta))))
                  (catch :default e
-                   (prn "game-loop error" e))))))
+                   (prn "game-loop error" e)
+                   (set! *e e))))))
 
 (defn mount-canvas! []
   (js/document.body.appendChild (:view app)))
@@ -207,7 +208,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn draw-background [sprite]
-  (p/remove-children bg-layer)
   (let [{:keys [width height]} (screen-size)
         texture-height (:height (:texture sprite))]
     (p/assign! sprite {:anchor {:x 0 :y 0}
