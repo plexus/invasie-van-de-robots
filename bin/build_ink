@@ -2,3 +2,6 @@
 
 cp ~/Dropbox/scenario.ink ~/clj-projects/invasie-van-de-robots/scenario.ink
 wine ~/opt/ink/inklecate  -o ~/clj-projects/invasie-van-de-robots/resources/public/scenario.json  ~/clj-projects/invasie-van-de-robots/scenario.ink
+
+# trigger shadow
+touch src/spel/invasie.cljs

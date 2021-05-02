@@ -260,6 +260,9 @@
              (map #(.-parentNode %))
              (keep
               (fn [el]
+                (when (attr el "transform")
+                  (log/warn :tranform-not-supported {:element el}
+                            :message "SVG element has transform attributes which is not supported by " *ns* ", coordinates may be wrong." ))
                 (when-let [data (desc-edn el)]
                   (let [data (assoc data
                                     :id (keyword (attr el "id"))

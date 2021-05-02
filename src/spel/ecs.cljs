@@ -64,8 +64,26 @@
                  :vx 1}
                 #{:position :velocity})
     (add-system physics)
+    (add-system clip-bounds))
+;; => {:entities
+;;     {:foo {:id :foo, :vx 1, :spel.ecs/components #{:position :velocity}}},
+;;     :systems
+;;     #{{:id :spel.ecs/clip-bounds,
+;;        :requires #{:position},
+;;        :tick
+;;        #object[sci.impl.fns$fun$arity_2__16416 0x3e93d1fe "sci.impl.fns$fun$arity_2__16416@3e93d1fe"]}
+;;       {:id :spel.ecs/physics,
+;;        :requires #{:position :velocity},
+;;        :load
+;;        #object[sci.impl.fns$fun$arity_2__16416 0x1488d9a3 "sci.impl.fns$fun$arity_2__16416@1488d9a3"],
+;;        :tick
+;;        #object[sci.impl.fns$fun$arity_2__16416 0x3ff72021 "sci.impl.fns$fun$arity_2__16416@3ff72021"]}}}
+
+(-> world
+    (add-entity {:id :foo
+                 :vx 1}
+                #{:position :velocity})
+    (add-system physics)
     (add-system clip-bounds)
     (->> (iterate tick))
-    (nth 101)
-
-    )
+    (nth 101))

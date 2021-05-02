@@ -1,0 +1,1 @@
+echo ~/Dropbox/scenario.ink | entr -- bin/build_ink

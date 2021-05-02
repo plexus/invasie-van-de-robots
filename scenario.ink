@@ -32,9 +32,34 @@ ROBOT: GEGROET. BIEP. BOEP.... SNIK... OH MIJN ARME KAT.
       SPELER: Ach zo, dat moet wel een belangrijke taak zijn. Euh... biep. boep.
       ROBOT: JAZEKER. TUNNEL NAAR LANCEERBASIS! BIEEEP.
       -> keuzes
-    * Je ziet er niet erg vrolijk uit waarde kollega. Wat ligt er op je transistors?
+    * (kat)Je ziet er niet erg vrolijk uit waarde kollega... Wat ligt er op je transistors?
       ROBOT: MIJN KAT. MIJN ARME KAT. ZE IS VERDWENEN.
       -> keuzes
-    * Fijne dag nog! [] Veel sucess bij het vinden van je kat! 
+    + {kat} Zal ik je kat helpen vinden?
+      ROBOT: DAT ZOU FANTASTISCH ZIJN.
+      ROBOT: MISSCHIEN DAT ZE TERUGKOMT ALS IK HAAR ETEN KAN GEVEN.
+      -> keuzes
+    + Fijne dag nog! [] Veel sucess bij het vinden van je kat! 
       -> END
+
+=== winkel ===
+
+WINKELIER: WAARMEE KAN IK U VAN DIENST ZIJN?
+WINKELIER: IK HEB VIJZEN, MOTOROLIE, EN VERSE TRANSISTORS.
+
+- (keuzes)
+    * {robot_op_bank.kat} Ik zoek katteneten
+      WINKELIER: KATTENETEN? WAAR HEB JE DAT VOOR NODIG
+      SPELER: Voor mijn kat, tiens.
+      WINKELIER: LOGICA! DE VORIGE UITBATER HEEFT NOG KATTENETEN ACHTER GELATEN. ALSJEBLIEFT!
+      >>> krijg katteneten
+      -> END
+    + Ik kijk alleen maar
+      -> END
+
+=== item_is_te_ver ===
+
+{~Daar kan ik niet aan|Misschien als ik iets dichter ga staan|Dat is wel erg ver|Zo gaat dat niet lukken}
+
+->END
 
