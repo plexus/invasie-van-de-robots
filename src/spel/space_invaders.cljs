@@ -2,16 +2,20 @@
   (:require [applied-science.js-interop :as j]
             [kitchen-async.promise :as promise]
             [lambdaisland.puck :as p]
-            [spel.engine :refer [app key-event->keyword load-scene
-                                 make-sprite! move-sprite pad-hit-area!
-                                 scene-swap! sprite sprite-layer
-                                 start-scene tick-scene
-                                 center-viewport]]))
+            [spel.engine
+             :as engine
+             :refer [app key-event->keyword load-scene
+                     make-sprite! move-sprite pad-hit-area!
+                     scene-swap! sprite sprite-layer
+                     start-scene tick-scene
+                     center-viewport]]))
 
 (defmethod load-scene :space-invaders [state]
-  (promise/let [{:keys [minispel]}
+  (promise/let [{:keys [minispel stars]}
                 (p/load-resources! app
-                                   {:minispel "images/minispel/minispel.json"})]
+                                   {:stars "images/stars.jpg"
+                                    :minispel "images/minispel/minispel.json"})]
+    (make-sprite! :stars stars)
     (doseq [k [:ruimteschip :loding :batterij :kogel
                :pijl-links :pijl-rechts :pijl-schiet]]
       (doto (make-sprite! k (j/get (:textures minispel) (str (name k) ".png")))
@@ -43,6 +47,9 @@
         virussen (p/container {})
         ga-links! #(j/assoc! schip :vx -10)
         ga-rechts! #(j/assoc! schip :vx 10)]
+
+    (p/assign! (sprite :stars) {:anchor {:x 0.5 :y 0}})
+    (engine/draw-background (sprite :stars))
 
     (doseq [sprite [links rechts schiet]]
       (j/assoc! sprite :interactive true)
@@ -108,6 +115,8 @@
       (when (and (:visible kogel) (p/rect-overlap? kogel virus))
         (p/assign! kogel {:visible false})
         (disj! sprite-layer kogel)
-        (disj! virussen virus)))))
+        (disj! virussen virus))
+      (when (empty? virussen)
+        (engine/goto-scene :invasie)))))
 
 (def no-clean-ns nil)

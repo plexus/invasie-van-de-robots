@@ -169,6 +169,26 @@
                  (daedalus/debug-draw path-handler)
                  (.draw collision-sys debug-graphics)))))})
 
+(defmulti collission-action (fn [[action] scene] action))
+
+(defmethod collission-action :goto-room [[_ target-room target] scene]
+  (let [{:keys [player pause-collisions? rooms elements path-handler]} scene
+        ;; (when (= :goto-room action))
+        {:keys [ratio width mesh]} (get rooms target-room)
+        rect (get-in elements [target :rect])
+        player-x (* (+ (:x rect) (/ (:width rect) 2)) ratio)
+        player-y (* (+ (:y rect) (:height rect)) ratio)]
+    (daedalus/set-mesh path-handler mesh)
+    (daedalus/set-location path-handler player-x player-y)
+    (run-components! :leave (scene-state))
+    (scene-swap! assoc
+                 :room target-room
+                 :pause-collisions? true)
+    (run-components! :enter (scene-state))))
+
+(defmethod collission-action :start-scene [[_ target-scene] scene]
+  (goto-scene target-scene))
+
 (def +collisions
   {:tick (fn [scene delta]
            (let [{:keys [player pause-collisions? rooms elements path-handler]} scene
@@ -177,21 +197,8 @@
 
              ;; set col-obj x y
              (if-let [[obj :as collisions] (doall (filter-collisions player-collision collision-sys))]
-               (do
-                 (when (not pause-collisions?)
-                   (let [[_action target-room target] (.-action obj)
-                         ;; (when (= :goto-room action))
-                         {:keys [ratio width mesh]} (get rooms target-room)
-                         rect (get-in elements [target :rect])
-                         player-x (* (+ (:x rect) (/ (:width rect) 2)) ratio)
-                         player-y (* (+ (:y rect) (:height rect)) ratio)]
-                     (daedalus/set-mesh path-handler mesh)
-                     (daedalus/set-location path-handler player-x player-y)
-                     (run-components! :leave (scene-state))
-                     (scene-swap! assoc
-                                  :room target-room
-                                  :pause-collisions? true)
-                     (run-components! :enter (scene-state)))))
+               (when (and (not pause-collisions?) (j/get obj :action))
+                 (collission-action (j/get obj :action) scene))
                (when pause-collisions?
                  (scene-swap! assoc :pause-collisions? false)))))})
 
@@ -497,7 +504,7 @@
              :images images
              :intro-done? false
              :story story
-             :components #_standard-components intro-components))))
+             :components standard-components #_intro-components))))
 
 (defn draw-inventory [{:keys [ui-graphics inventory sprites player path-handler]}]
   (p/with-fill [ui-graphics {:color 0xf5c842}]
@@ -551,7 +558,6 @@
                (story-goto! "item_is_te_ver")
                (scene-swap! update :inventory conj (:id item-sprite)))))
          (draw-inventory (scene-state)))))))
-
 
 (defmethod start-scene :invasie [{:keys [player debug-graphics ui-graphics]
                                   :as scene}]

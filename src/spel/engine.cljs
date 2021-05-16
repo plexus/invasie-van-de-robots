@@ -210,8 +210,7 @@
 (defn draw-background [sprite]
   (let [{:keys [width height]} (screen-size)
         texture-height (:height (:texture sprite))]
-    (p/assign! sprite {:anchor {:x 0 :y 0}
-                       :scale {:x (/ world-height texture-height)
+    (p/assign! sprite {:scale {:x (/ world-height texture-height)
                                :y (/ world-height texture-height)}})
     (conj! bg-layer sprite)))
 
