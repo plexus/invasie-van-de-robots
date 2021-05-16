@@ -2,7 +2,7 @@
 
 set -ex
 
-git clean -xfd .shadow-cljs/ resources/
+git clean -xfd .shadow-cljs/ resources/public/ui
 npx shadow-cljs release main
 cp -r resources/public/* docs
 sed "s/main.js/main.js?$(bb -e '(System/currentTimeMillis)')/" -i docs/index.html

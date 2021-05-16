@@ -22,7 +22,7 @@
 (def ui-height 100)
 (def achtergrond-kleur 0x000000)
 
-(declare app renderer stage bg-graphics fill-layer bg-layer sprite-layer viewport world ui-layer)
+(declare app renderer stage bg-graphics fill-layer bg-layer sprite-layer sprite-layer-fg viewport world ui-layer)
 
 (defn setup-app []
   (set! app (p/full-screen-app {}))
@@ -43,9 +43,10 @@
 
   (set! bg-layer (p/container {}))
   (set! sprite-layer (p/container {}))
+  (set! sprite-layer-fg (p/container {}))
   (set! ui-layer (p/container {}))
 
-  (set! viewport (p/container {} bg-layer sprite-layer))
+  (set! viewport (p/container {} bg-layer sprite-layer sprite-layer-fg))
   (set! world (p/container {} viewport))
 
   (conj! stage fill-layer world ui-layer)

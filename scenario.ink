@@ -1,6 +1,4 @@
 
-De wereld is overgenomen door robots, maar jij bent kunnen ontsnappen door je te verstoppen in de kast. Baan je een weg naar de ruimtebasis van de gemene Professor die de robots bestuurd, om de wereld te redden.
-
 -> END
 
 === intro ===
@@ -60,6 +58,12 @@ WINKELIER: IK HEB VIJZEN, MOTOROLIE, EN VERSE TRANSISTORS.
 === item_is_te_ver ===
 
 {~Daar kan ik niet aan|Misschien als ik iets dichter ga staan|Dat is wel erg ver|Zo gaat dat niet lukken}
+
+->END
+
+=== combinatie_ken_ik_niet ===
+
+{~Dat snap ik niet|Hoe bedoel je?|Dat heeft geen zin|Ik denk niet dat dat gaat lukken}
 
 ->END
 
