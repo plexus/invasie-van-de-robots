@@ -6,6 +6,7 @@
             [lambdaisland.glogi :as log]
             [spel.thicc :as thicc]
             [lambdaisland.glogi.console :as glogi-console]
+            [lambdaisland.puck :as p]
             [spel.engine :as engine]
             [spel.maniac-mansion]
             [spel.main-menu]
@@ -44,6 +45,7 @@ spel.main-menu/no-clean-ns
 
 (defn on-hot-reload []
   (log/info :hot-reload! {})
+  (p/unlisten! (:ticker engine/app) :tick)
   (run! #(.remove %) (thicc/query-all "canvas"))
   (init! (:scene (engine/scene-state)))
 

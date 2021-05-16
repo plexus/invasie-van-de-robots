@@ -24,9 +24,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="15.209961"
-     inkscape:cx="-199.47455"
-     inkscape:cy="-208.77766"
+     inkscape:zoom="2.6887666"
+     inkscape:cx="-463.78142"
+     inkscape:cy="213.29482"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
@@ -7158,6 +7158,7 @@ fqH1P1DXnDQ/bQIDyukTTYj1H//Z
       <desc
          id="desc2548">{:type :collision
  :origin :pleintje
+ :pre-check :riool-open?
  :action [:goto-room :riool :riool-links]}</desc>
     </path>
     <rect
@@ -8981,12 +8982,12 @@ LRKEVDMIGGEhRvw0g/+yHYHQIcAiLGKACCO2YAoWYbEFARbhVgfu9KepjYjcby8KiiyJQ7cH/b2Y
 aL/1z9vL8/7bf+8f/yT8p9x5KmH5n2Y4iHi6nCPC7tuC2xEIHSDCIgasG4bdfQop7NayCLvvgOVE
 3Y7oFbg9wO8AMDQ0t57m7EIHAAAAAAAAAAAAAAAAAAAV/AfEJIPcIH25ZwAAAABJRU5ErkJggg==
 "
-       id="robot-hoofd-lichaam"
+       id="robot-lichaam-karton"
        x="273.98874"
        y="144.42792"
        inkscape:svg-dpi="1">
       <desc
-         id="desc6766">{:type :lichaam}</desc>
+         id="desc6766">{:type :item}</desc>
     </image>
     <image
        width="111.47778"

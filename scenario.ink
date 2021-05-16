@@ -40,6 +40,19 @@ ROBOT: GEGROET. BIEP. BOEP.... SNIK... OH MIJN ARME KAT.
     + Fijne dag nog! [] Veel sucess bij het vinden van je kat! 
       -> END
 
+=== robot_krijgt_katteneten ===
+
+ROBOT: KATTENVOER! NU KOMT MIJN KAT ZEKER TERUG. BIEP BOEP JEEJ!
+ROBOT: HEEL ERG BEDANKT. KAN IK JE MISSCHIEN ERGENS MEE HELPEN? ... BIEEEEP
+SPELER: Je zou misschien het riooldeksel kunnen open doen.
+ROBOT: RIOOLDEKSEL IS SUPER GEHEIME TUNNEL NAAR LANCEERBASIS. MOET BEWAAKT WORDEN!
+SPELER: Als je het deksel even open doet, dan zal ik de binnenkant bewaken! Goed idee, toch!
+ROBOT: ....
+ROBOT: OK!
+>>> riool gaat open
+
+-> END
+
 === winkel ===
 
 WINKELIER: WAARMEE KAN IK U VAN DIENST ZIJN?
@@ -57,13 +70,20 @@ WINKELIER: IK HEB VIJZEN, MOTOROLIE, EN VERSE TRANSISTORS.
 
 === item_is_te_ver ===
 
-{~Daar kan ik niet aan|Misschien als ik iets dichter ga staan|Dat is wel erg ver|Zo gaat dat niet lukken}
+{~Daar kan ik niet aan|Misschien als ik iets dichter ga staan|Dat is wel erg ver}
 
 ->END
 
 === combinatie_ken_ik_niet ===
 
 {~Dat snap ik niet|Hoe bedoel je?|Dat heeft geen zin|Ik denk niet dat dat gaat lukken}
+
+->END
+
+=== eerst_verkleden ===
+
+Ben je gek? Het krioelt daar van de robots! Als ik zo buiten kom is het GAME OVER.
+Misschien kan ik me eerst vermommen in een robot. Eens kijken wat ik hier nog liggen heb.
 
 ->END
 
