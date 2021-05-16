@@ -619,7 +619,7 @@
                                 :images images
                                 :intro-done? false
                                 :story story
-                                :components standard-components #_intro-components)]
+                                :components #_standard-components intro-components)]
       (run-components! :load scene)
       scene)))
 
