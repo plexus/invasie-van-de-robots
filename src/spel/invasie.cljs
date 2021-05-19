@@ -26,6 +26,8 @@
             [spel.thicc :as thicc])
   (:require-macros [spel.ink :refer [inline-file]]))
 
+(def show-intro? true)
+
 (def svg-url "images/invasie_van_de_robots.svg")
 
 (def images {:ventje1 "images/ventje_frame1.png"
@@ -648,8 +650,9 @@
                                 :intro-done? false
                                 :story story
                                 :components
-                                standard-components
-                                #_intro-components)]
+                                (if show-intro?
+                                  intro-components
+                                  standard-components))]
       (run-components! :load scene)
       scene)))
 
