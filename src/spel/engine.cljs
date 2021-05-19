@@ -103,9 +103,9 @@
                  (promise/do
                    (stop-scene old)
                    (show-spinner!)
-                   (if-not (:loaded? new)
+                   (if-not (:loaded? new-scene)
                      (do
-                       (log/debug :loading-scene new)
+                       (log/debug :loading-scene new-scene)
                        (promise/let [new-state (load-scene new-scene)]
                          (swap! state update-in scene-path
                                 (fn [scene]

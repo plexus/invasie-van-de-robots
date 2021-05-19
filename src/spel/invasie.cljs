@@ -37,7 +37,7 @@
 
 (def story (ink/story (subs (inline-file "resources/public/scenario.json") 1)))
 
-(declare run-components! story-next on-cue place-room-sprite! combine-items combine-items-default stop-walking!)
+(declare run-components! story-next on-cue place-room-sprite! combine-items combine-items-default stop-walking! inventory-add!)
 
 (defonce box-on-click
   (p/listen! (thicc/el-by-id "text-box")
@@ -133,13 +133,25 @@
                (conj! bg-layer sprite)
                (make-clickable sprite))))})
 
+(defn set-player-destination [{:keys [path-handler player]} {:keys [x y]}]
+  (loop [y y]
+    (cond
+      (<= 1000 y)
+      nil
+      (not (daedalus/reachable? path-handler x (- y 25)))
+      (recur (+ y 25))
+      :else
+      (do
+        (j/assoc! player :on-arrival nil)
+        (daedalus/set-destination path-handler x y)
+        (scene-swap! assoc :pause-collisions? false)))))
+
 (def +player
   {:enter (fn [{:keys [sprites room player]}]
             (conj! sprite-layer-fg player))
    :leave (fn [{:keys [player]}]
             (disj! sprite-layer-fg player))
-   :bg-click (fn [{:keys [path-handler]} {:keys [x y]}]
-               (daedalus/set-destination path-handler x y))
+   :bg-click set-player-destination
    :tick (fn [{:keys [player path-handler sprites] :as scene} delta]
            (let [{:keys [player-collision collision-sys]
                   :as room} (room-state scene)
@@ -160,7 +172,9 @@
                (do
                  (p/assign! (:player-animation sprites) {:visible false})
                  (p/assign! (:player-static sprites) {:visible true})
-                 (p/stop! (:player-animation sprites))))))})
+                 (p/stop! (:player-animation sprites))
+                 (when (j/get player :on-arrival)
+                   ((j/get player :on-arrival)))))))})
 
 (def +debug
   {:enter (fn [{:keys [debug-graphics]}]
@@ -174,6 +188,21 @@
                (when (= 0 (mod (swap! debug-count inc) 10))
                  (daedalus/debug-draw path-handler)
                  (.draw collision-sys debug-graphics)))))})
+
+(defn exit-room! []
+  (run-components! :leave (scene-state)))
+
+(defn enter-room! [scene target-room target]
+  (let [{:keys [player pause-collisions? rooms elements path-handler]} scene
+        {:keys [ratio width mesh]} (get rooms target-room)
+        rect (get-in elements [target :rect])
+        player-x (* (+ (:x rect) (/ (:width rect) 2)) ratio)
+        player-y (* (+ (:y rect) (:height rect)) ratio)]
+    (daedalus/set-mesh path-handler mesh)
+    (daedalus/set-location path-handler player-x player-y)
+    (exit-room!)
+    (scene-swap! assoc :room target-room)
+    (run-components! :enter (scene-state))))
 
 (defmulti collission-pre-check (fn [key scene] key))
 
@@ -190,16 +219,7 @@
 (defmulti collission-action (fn [[action _ _] _] action))
 
 (defmethod collission-action :goto-room [[_ target-room target] scene]
-  (let [{:keys [player pause-collisions? rooms elements path-handler]} scene
-        {:keys [ratio width mesh]} (get rooms target-room)
-        rect (get-in elements [target :rect])
-        player-x (* (+ (:x rect) (/ (:width rect) 2)) ratio)
-        player-y (* (+ (:y rect) (:height rect)) ratio)]
-    (daedalus/set-mesh path-handler mesh)
-    (daedalus/set-location path-handler player-x player-y)
-    (run-components! :leave (scene-state))
-    (scene-swap! assoc :room target-room)
-    (run-components! :enter (scene-state))))
+  (enter-room! scene target-room target))
 
 (defmethod collission-action :start-scene [[_ target-scene] scene]
   (goto-scene target-scene))
@@ -255,9 +275,8 @@
                        (story-goto! dialogue))))))))
    :tick (fn [scene delta]
            (doseq [sprite sprite-layer
-                   :when (j/get sprite :npc?)
-                   :let [path-handler (j/get sprite :path-handler)]
-                   :when path-handler]
+                   :when (j/get sprite :path-handler)
+                   :let [path-handler (j/get sprite :path-handler)]]
              (if (daedalus/next? path-handler)
                (daedalus/next! path-handler)
                (when (j/get sprite :on-arrival)
@@ -273,10 +292,10 @@
            (doseq [item-data (->> elements vals (filter (comp #{:item} :type)))]
              (p/assign! (get sprites (:id item-data)) {:item item-data})))
    :enter (fn [scene]
-            (let [{:keys [sprites path-handler elements inventory]} scene
+            (let [{:keys [player sprites path-handler elements inventory used]} scene
                   {:keys [items]} (room-state scene)]
               (doseq [{:keys [item rect] :as item-data} items
-                      :when (not (some #{item} inventory))
+                      :when (not (some #{item} (concat inventory used)))
                       :let [{:keys [texture] :as sprite} (get sprites item)
                             {:keys [width height]} texture
                             scale (min (/ (:heigt rect) height)
@@ -285,7 +304,16 @@
                 (p/assign! sprite {:x (:x rect)
                                    :y (:y rect)
                                    :scale {:x scale :y scale}
-                                   :item item-data}))))
+                                   :item item-data
+                                   :interactive true})
+                (p/listen!
+                 sprite
+                 [:click :touchstart]
+                 ::click
+                 (fn [e]
+                   (prn [:grabbing item])
+                   (set-player-destination (scene-state) (p/local-position (j/get e :data) bg-layer))
+                   (j/assoc! player :on-arrival #(inventory-add! item)))))))
    :leave (fn [scene]
             (let [{:keys [sprites]} scene
                   {:keys [items]} (room-state scene)]
@@ -439,7 +467,7 @@
    +npcs
    +items
    +inventory
-   #_+debug])
+   +debug])
 
 (def intro-components
   [+background
@@ -559,9 +587,9 @@
           :items            items})))))
 
 (defmethod load-scene :invasie [scene]
-  (p/let [svg ^await (svg/fetch-svg svg-url)
+  (p/let [svg      ^await (svg/fetch-svg svg-url)
           elements ^await (svg/elements svg)
-          images ^await (p/load-resources! app images)]
+          images   ^await (p/load-resources! app images)]
     (let [start      (:start elements)
           sprites    (->> elements
                           vals
@@ -615,11 +643,13 @@
                                 :debug-graphics debug-graphics
                                 :ui-graphics ui-graphics
                                 :ui-size 0.1
-                                :inventory [:hand]
+                                :inventory []
                                 :images images
                                 :intro-done? false
                                 :story story
-                                :components #_standard-components intro-components)]
+                                :components
+                                standard-components
+                                #_intro-components)]
       (run-components! :load scene)
       scene)))
 
@@ -631,11 +661,12 @@
 (defmethod combine-items :default [this that _] false)
 
 (defn inventory-add! [& items]
-  (scene-swap! update :inventory #(distinct (apply conj % items)))
+  (scene-swap! update :inventory #(distinct (apply conj (vec %) items)))
   true)
 
 (defn inventory-remove! [& items]
   (scene-swap! update :inventory #(vec (remove (set items) %)))
+  (scene-swap! update :used into items)
   true)
 
 (defmethod combine-items :spuitbus [this that _]
@@ -676,6 +707,18 @@
 
     false))
 
+(defmethod combine-items :robot-hoofd-karton [robot-hoofd that {:keys [player sprites]}]
+  (case (:id that)
+    :player
+    (show-text "Als ik het nu nog een metaalkleur kan geven, dan ziet het er echt uit als een robot!")
+    false))
+
+(defmethod combine-items :robot-lichaam-karton [robot-hoofd that {:keys [player sprites]}]
+  (case (:id that)
+    :player
+    (show-text "Als ik het nu nog een metaalkleur kan geven, dan ziet het er echt uit als een robot!")
+    false))
+
 (defmethod combine-items :robot-hoofd [robot-hoofd that {:keys [player sprites]}]
   (case (:id that)
     :player
@@ -684,7 +727,8 @@
       (p/assign! robot-hoofd {:x -100 :y -1110
                               :anchor {:x 0.5 :y 0.5}
                               :scale {:x -5.5
-                                      :y 5.5}})
+                                      :y 5.5}
+                              :interactive false})
       (conj! player robot-hoofd)
       (when (some #{(:robot-lichaam sprites)} player)
         (scene-swap! assoc :is-verkleed? true))
@@ -699,7 +743,8 @@
       (p/assign! robot-lichaam {:x -100 :y -500
                                 :anchor {:x 0.5 :y 0.5}
                                 :scale {:x -4.5
-                                        :y 4.5}})
+                                        :y 4.5}
+                                :interactive false})
       (conj! player robot-lichaam)
       (when (some #{(:robot-hoofd sprites)} player)
         (scene-swap! assoc :is-verkleed? true))
@@ -730,7 +775,6 @@
 
 (defmethod start-scene :invasie [{:keys [player debug-graphics ui-graphics]
                                   :as scene}]
-
   (conj! ui-layer ui-graphics)
   (p/assign! ui-layer {:sortableChildren true})
   (p/assign! ui-graphics {:zIndex -100})
@@ -812,6 +856,36 @@
 
   (p/clear! g))
 
-(inventory-add! :robot-hoofd :robot-lichaam :katteneten)
+;; (inventory-add! :robot-hoofd :robot-lichaam :katteneten)
 
-(:inventory (scene-state))
+;; (:inventory (scene-state))
+
+;; (:position (:player (scene-state)))
+;; ;; => #pixi/ObservablePoint {:x 1010.169080625786, :y 848.1984371376151}
+;; ;; => #pixi/ObservablePoint {:x 659.8823042474914, :y 918.1529474170061}
+
+
+
+;; (enull? (daedalus/locate-position 700 900 (:mesh (:path-handler (scene-state)))))
+
+;; (.-_pos (.-_originVertex (.-_edge (first (:_faces (:mesh (:path-handler (scene-state))))))))
+;; ;; => #hxDaedalus.data.math/Point2D {:x 1422.618680015489, :y 1010, :length 1744.6902042279632}
+
+;; (defn enull? [value]
+;;   (and (array? value) (= "ENull" (first value))))
+
+;; (for [face (:_faces (:mesh (:path-handler (scene-state))))]
+;;   [(enull? (.isInFace daedalus/Geom2D 100 800 face))
+;;    (.-_isReal face)])
+
+
+(def astar (daedalus/a-star {:radius 20 :mesh (:mesh (:path-handler (scene-state)))}))
+
+(let [from-x 900
+      from-y 800
+      to-x 900
+      to-y 900
+      a #js []
+      b #js []]
+  (.findPath astar from-x from-y to-x to-y a b)
+  [(seq a) (seq b)])

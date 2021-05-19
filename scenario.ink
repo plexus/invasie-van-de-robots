@@ -22,7 +22,8 @@ Voor dat je naar buiten kan heb je een vermomming nodig. Verkleed je in een robo
 === robot_op_bank ===
 
 SPELER: Hallo kollega!
-ROBOT: GEGROET. BIEP. BOEP.... SNIK... OH MIJN ARME KAT.
+{not robot_krijgt_katteneten: "ROBOT: GEGROET. BIEP. BOEP.... SNIK... OH MIJN ARME KAT."}
+{robot_krijgt_katteneten: "ROBOT: HALLO KOLLEGA! NOG EENS BEDANKT VOOR HET KATTENETEN!"}
 
 - (keuzes)
     * Hoe komt het dat jij hier op de bank zit? [] Niet veel te doen vandaag?
@@ -30,12 +31,13 @@ ROBOT: GEGROET. BIEP. BOEP.... SNIK... OH MIJN ARME KAT.
       SPELER: Ach zo, dat moet wel een belangrijke taak zijn. Euh... biep. boep.
       ROBOT: JAZEKER. TUNNEL NAAR LANCEERBASIS! BIEEEP.
       -> keuzes
-    * (kat)Je ziet er niet erg vrolijk uit waarde kollega... Wat ligt er op je transistors?
+    * (kat) {not robot_krijgt_katteneten} Je ziet er niet erg vrolijk uit waarde kollega... Wat ligt er op je transistors?
       ROBOT: MIJN KAT. MIJN ARME KAT. ZE IS VERDWENEN.
       -> keuzes
-    + {kat} Zal ik je kat helpen vinden?
+    + {not robot_krijgt_katteneten} {kat} Zal ik je kat helpen vinden?
       ROBOT: DAT ZOU FANTASTISCH ZIJN.
       ROBOT: MISSCHIEN DAT ZE TERUGKOMT ALS IK HAAR ETEN KAN GEVEN.
+      ROBOT: BIEP. BOEP.
       -> keuzes
     + Fijne dag nog! [] Veel sucess bij het vinden van je kat! 
       -> END
@@ -56,10 +58,11 @@ ROBOT: OK!
 === winkel ===
 
 WINKELIER: WAARMEE KAN IK U VAN DIENST ZIJN?
-WINKELIER: IK HEB VIJZEN, MOTOROLIE, EN VERSE TRANSISTORS.
+
+WINKELIER: {vraag_katteneten: TOCH NIET WEER KATTENTEN?} IK HEB VIJZEN, MOTOROLIE, EN VERSE TRANSISTORS.
 
 - (keuzes)
-    * {robot_op_bank.kat} Ik zoek katteneten
+    * (vraag_katteneten) {robot_op_bank.kat} {not robot_krijgt_katteneten} Ik zoek katteneten
       WINKELIER: KATTENETEN? WAAR HEB JE DAT VOOR NODIG
       SPELER: Voor mijn kat, tiens.
       WINKELIER: LOGICA! DE VORIGE UITBATER HEEFT NOG KATTENETEN ACHTER GELATEN. ALSJEBLIEFT!

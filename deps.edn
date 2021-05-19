@@ -11,7 +11,7 @@
   reagent/reagent                     {:mvn/version "1.0.0"}
 
   lambdaisland/data-printers {:mvn/version "0.0.22"}
-  com.lambdaisland/daedalus  {:mvn/version "0.0.35"}
+  com.lambdaisland/daedalus  {:local/root "/home/arne/github/lambdaisland/daedalus"}
   lambdaisland/dom-types     {:local/root "/home/arne/github/lambdaisland/dom-types"}
   lambdaisland/puck          {:local/root "/home/arne/github/lambdaisland/puck"}}
 

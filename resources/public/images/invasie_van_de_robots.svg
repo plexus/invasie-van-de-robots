@@ -24,9 +24,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="2.6887666"
-     inkscape:cx="-463.78142"
-     inkscape:cy="213.29482"
+     inkscape:zoom="0.95062255"
+     inkscape:cx="-624.85368"
+     inkscape:cy="477.0558"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
@@ -102,8 +102,8 @@
        id="winkel-binnen"
        width="3.3105183"
        height="2.9808757"
-       x="51.416355"
-       y="105.72588">
+       x="54.254868"
+       y="107.87846">
       <desc
          id="desc1754">{:origin :winkel}</desc>
     </rect>
@@ -185,17 +185,27 @@
       <desc
          id="desc1064-5">{:type :collision
  :origin :pleintje
- :action [:goto-room :gang :gang-voordeur]}</desc>
+ :action [:goto-room :gang :huisdeur-binnen]}</desc>
     </rect>
     <rect
        style="font-variation-settings:normal;vector-effect:none;fill:#008000;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
        id="winkel-buiten"
        width="2.7078071"
        height="2.8874855"
-       x="-55.654587"
-       y="85.694939">
+       x="-56.784637"
+       y="88.163773">
       <desc
          id="desc1754-1">{:origin :pleintje}</desc>
+    </rect>
+    <rect
+       style="font-variation-settings:normal;vector-effect:none;fill:#008000;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
+       id="huisdeur-buiten"
+       width="2.7078071"
+       height="2.8874855"
+       x="-155.60367"
+       y="93.914963">
+      <desc
+         id="desc1754-1-9">{:origin :pleintje}</desc>
     </rect>
     <rect
        style="font-variation-settings:normal;vector-effect:none;fill:#008000;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
@@ -305,7 +315,7 @@
        id="keuken-ingang"
        width="3.4802992"
        height="3.1792815"
-       x="77.704994"
+       x="79.680267"
        y="-24.584681">
       <desc
          id="desc1162">{:origin :keuken}</desc>
@@ -333,7 +343,7 @@
          id="desc3289">{:type :room}</desc>
     </image>
     <path
-       style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:#2a75ff;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264582px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000;stop-opacity:1"
+       style="font-variation-settings:normal;opacity:1;fill:#2a75ff;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264582px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000;stop-opacity:1"
        d="M -290.94713,-8.3639155 V -116.92832 h 153.31786 V -8.3639155 l -7.85048,-14.4122765 1.73837,-56.325188 -11.89416,-0.5342 -1.55387,38.919769 -6.67858,-10.215367 -13.49127,-0.01791 -44.91857,0.03524 -4.18754,12.003555 -30.10631,-0.713646 -6.61059,7.999996 -13.19599,-0.1976 -14.56887,23.4575825"
        id="path1083">
       <desc
@@ -413,8 +423,8 @@
        id="slaapkamer-ingang"
        width="2.1952281"
        height="2.0048029"
-       x="-153.99945"
-       y="-35.525311">
+       x="-157.45769"
+       y="-34.120708">
       <desc
          id="desc1754-1-7-9">{:origin :slaapkamer}</desc>
     </rect>
@@ -451,7 +461,7 @@
          id="desc1064">{:type :collision
  :origin :gang
  :pre-check :is-verkleed?
- :action [:goto-room :pleintje :pleintje-huisdeur]}</desc>
+ :action [:goto-room :pleintje :huisdeur-buiten]}</desc>
     </rect>
     <rect
        style="font-variation-settings:normal;vector-effect:none;fill:#aad400;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264582px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
@@ -478,8 +488,8 @@
        id="slaapkamer-uitgang"
        width="3.6033964"
        height="3.1917486"
-       x="-95.449608"
-       y="-33.971992">
+       x="-92.294556"
+       y="-32.025188">
       <desc
          id="desc1754-1-7">{:origin :gang}</desc>
     </rect>
@@ -3711,8 +3721,8 @@ foKKf5pb7mZ/WWWy2WyyyxH7C/c07lDTX/1e3yar5X//2Q==
        id="raket-ingang"
        width="3.3105183"
        height="2.9808757"
-       x="-29.352131"
-       y="276.92096">
+       x="-27.891733"
+       y="277.81564">
       <desc
          id="desc1754-8">{:origin :raket}</desc>
     </rect>
@@ -3724,7 +3734,7 @@ foKKf5pb7mZ/WWWy2WyyyxH7C/c07lDTX/1e3yar5X//2Q==
       <desc
          id="desc1039-6">{:type :collision
  :origin :raket
- :action [:goto-room :riool :riool-rechts]}</desc>
+ :action [:goto-room :riool :riool-ingang-rechts]}</desc>
     </path>
     <image
        width="204.65266"
@@ -7142,7 +7152,7 @@ fqH1P1DXnDQ/bQIDyukTTYj1H//Z
     <rect
        style="font-variation-settings:normal;vector-effect:none;fill:#ff2a2a;fill-opacity:0.71179;stroke:#000000;stroke-width:0.264582px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
        id="riool-links"
-       width="13.236256"
+       width="7.0567441"
        height="35.473507"
        x="-274.23752"
        y="242.73335">
@@ -7159,7 +7169,7 @@ fqH1P1DXnDQ/bQIDyukTTYj1H//Z
          id="desc2548">{:type :collision
  :origin :pleintje
  :pre-check :riool-open?
- :action [:goto-room :riool :riool-links]}</desc>
+ :action [:goto-room :riool :riool-ingang-links]}</desc>
     </path>
     <rect
        style="font-variation-settings:normal;vector-effect:none;fill:#aad400;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264582px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
@@ -7187,10 +7197,10 @@ fqH1P1DXnDQ/bQIDyukTTYj1H//Z
     <rect
        style="font-variation-settings:normal;vector-effect:none;fill:#ff2a2a;fill-opacity:0.71179;stroke:#000000;stroke-width:0.264582px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
        id="rect1979-0"
-       width="7.4667654"
-       height="13.450534"
-       x="69.656044"
-       y="250.34303">
+       width="9.4872637"
+       height="17.090235"
+       x="68.645798"
+       y="248.52316">
       <desc
          id="desc1977-6">{:type :collision
  :origin :raket
@@ -7216,9 +7226,9 @@ fqH1P1DXnDQ/bQIDyukTTYj1H//Z
     </path>
     <path
        style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:#2a75ff;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000;stop-opacity:1"
-       d="M -51.520945,303.0061 V 156.50298 H 150.50348 V 303.0061 l -22.42651,-27.24001 -20.04733,0.003 -0.88074,-18.52067 -37.344093,0.003 0.02153,6.29034 26.991179,-0.0741 0.04401,12.30451 -72.172699,0.0179 1.263192,-11.8241 -42.894801,-1.10373 -6.300445,6.13083 -2.063592,-43.89476 -14.783671,10.09529 0.546218,53.52179 -11.976717,14.2909"
+       d="M -51.520945,303.0061 V 156.50298 H 150.50348 V 303.0061 l -22.42651,-27.24001 -20.04733,0.003 -0.88074,-18.52067 -27.832133,0.085 -1.440997,-8.81386 -9.243692,7.4e-4 0.02758,15.28601 28.157853,-0.33868 0.04401,12.30451 -72.172699,0.0179 1.263192,-11.8241 -42.894801,-1.10373 -6.300445,6.13083 -2.063592,-43.89476 -14.783671,10.09529 0.546218,53.52179 -11.976717,14.2909"
        id="path2939"
-       sodipodi:nodetypes="ccccccccccccccccccc">
+       sodipodi:nodetypes="ccccccccccccccccccccc">
       <desc
          id="desc2937">{:type :obstacle
  :origin :raket}</desc>
@@ -9509,5 +9519,129 @@ AAAASUVORK5CYII=
       <desc
          id="desc6627">{:type :item}</desc>
     </image>
+    <image
+       width="373.85626"
+       height="264.58334"
+       preserveAspectRatio="none"
+       xlink:href="kelder.jpg"
+       id="kelder"
+       x="-324.79184"
+       y="369.61877"
+       inkscape:svg-dpi="1">
+      <desc
+         id="desc9053">{:type :room}</desc>
+    </image>
+    <path
+       style="font-variation-settings:normal;fill:#2a75ff;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264581px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
+       d="M -324.79184,634.20214 V 369.61879 H 49.064423 v 264.58335 l -98.786403,-0.035 7.939443,-17.34155 -0.799992,-9.85945 51.3318559,-51.69126 10.0547131,-1.70361 4.911698,-79.80875 -25.9668416,-13.25721 -4.6094336,68.27568 -10.2507908,1.37727 -43.604888,44.75999 -200.606034,-0.0492 -63.46959,59.33295"
+       id="path1083-2"
+       sodipodi:nodetypes="cccccccccccccccc">
+      <desc
+         id="desc1104-8">{:type :obstacle
+ :origin :kelder}</desc>
+    </path>
+    <rect
+       style="font-variation-settings:normal;vector-effect:none;fill:#008000;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
+       id="kelder-ingang"
+       width="3.3105183"
+       height="2.9808757"
+       x="-187.3362"
+       y="609.70209">
+      <desc
+         id="desc1754-8-2">{:origin :kelder}</desc>
+    </rect>
+    <rect
+       style="font-variation-settings:normal;vector-effect:none;fill:#aad400;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264582px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
+       id="rect1975-3"
+       width="12.825803"
+       height="67.874603"
+       x="1.1711609"
+       y="470.05383">
+      <desc
+         id="desc1973-6">{:type :player-size
+ :origin :kelder}</desc>
+    </rect>
+    <image
+       width="336.54999"
+       height="238.125"
+       preserveAspectRatio="none"
+       xlink:href="controlekamer.jpg"
+       id="controlekamer"
+       x="108.02969"
+       y="381.86484"
+       inkscape:svg-dpi="1">
+      <desc
+         id="desc9055">{:type :room}</desc>
+    </image>
+    <path
+       style="font-variation-settings:normal;vector-effect:none;fill:#2a75ff;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
+       d="M 108.0297,611.77919 V 381.86483 l 336.54998,1e-5 -1.84794,223.75125 -36.94562,-32.47368 -27.9237,-13.02898 -10.08992,39.91546 -72.8342,3.29494 -69.5479,-26.68792 -40.02327,-22.79144 -23.57602,11.94992 -24.65599,14.24514 -18.81441,15.32671 -10.29101,16.41313"
+       id="path993-9"
+       sodipodi:nodetypes="cccccccccccccc">
+      <desc
+         id="desc1035-7">{:type :obstacle
+ :origin :controlekamer}</desc>
+    </path>
+    <rect
+       style="font-variation-settings:normal;vector-effect:none;fill:#008000;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
+       id="controlekamer-ingang"
+       width="3.3105183"
+       height="2.9808757"
+       x="135.27997"
+       y="602.39819">
+      <desc
+         id="desc1754-8-2-3">{:origin :controlekamer}</desc>
+    </rect>
+    <rect
+       style="font-variation-settings:normal;vector-effect:none;fill:#aad400;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264582px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
+       id="rect11326"
+       width="12.825803"
+       height="61.058018"
+       x="157.59647"
+       y="539.19653">
+      <desc
+         id="desc11324">{:type :player-size
+ :origin :controlekamer}</desc>
+    </rect>
+    <path
+       style="fill:#ff2a2a;fill-opacity:0.71179;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M -6.8605372,528.78099 18.80404,553.57129 23.715738,473.76252 -2.2511036,460.50531 Z"
+       id="path11561"
+       sodipodi:nodetypes="ccccc">
+      <desc
+         id="desc11559">{:type :collision
+ :origin :kelder
+ :action [:goto-room :controlekamer :controlekamer-ingang]}</desc>
+    </path>
+    <rect
+       style="font-variation-settings:normal;fill:#008000;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264582px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
+       id="huisdeur-binnen"
+       width="3.6033964"
+       height="3.1917486"
+       x="-14.935703"
+       y="-43.489494">
+      <desc
+         id="desc12084">{:origin :gang}</desc>
+    </rect>
+    <rect
+       style="font-variation-settings:normal;vector-effect:none;fill:#008000;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
+       id="riool-ingang-links"
+       width="2.7078071"
+       height="2.8874855"
+       x="-260.09003"
+       y="267.74469">
+      <desc
+         id="desc12088">{:origin :riool}</desc>
+    </rect>
+    <rect
+       style="font-variation-settings:normal;vector-effect:none;fill:#008000;fill-opacity:0.342559;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-color:#000000"
+       id="riool-ingang-rechts"
+       width="2.7078071"
+       height="2.8874855"
+       x="-95.519089"
+       y="267.74469">
+      <desc
+         id="desc12092">{:origin :riool}</desc>
+    </rect>
   </g>
 </svg>

@@ -2,6 +2,7 @@
   (:require [applied-science.js-interop :as j]
             [kitchen-async.promise :as promise]
             [lambdaisland.puck :as p]
+            [spel.invasie :as invasie]
             [spel.engine
              :as engine
              :refer [app key-event->keyword load-scene
@@ -72,8 +73,8 @@
 
     (scene-swap! assoc :virussen virussen)
 
-    (doseq [x (range 8)
-            y (range 3)
+    (doseq [x (range 1 #_8)
+            y (range 1 #_3)
             :let [sprite (sprite [:virus x y])]]
       (p/assign! sprite {:x (+ -400 (* 100 x))
                          :y (+ 100 (* 100 y))})
@@ -102,7 +103,7 @@
   (when (or (< (:x virussen) -400)
             (< 400 (:x virussen)))
     (j/update! virussen :vx * -1)
-    (j/update! virussen :x + (* 2 (j/get virussen :vx)))
+    (j/update! virussen :x #(engine/clamp -399 % 399))
     (j/update! virussen :y + 20))
 
   (doseq [n [:ruimteschip :kogel]]
@@ -117,6 +118,7 @@
         (disj! sprite-layer kogel)
         (disj! virussen virus))
       (when (empty? virussen)
-        (engine/goto-scene :invasie)))))
+        (engine/goto-scene :invasie)
+        (invasie/enter-room! (engine/scene-state) :kelder :kelder-ingang)))))
 
 (def no-clean-ns nil)
