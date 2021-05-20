@@ -73,8 +73,8 @@
 
     (scene-swap! assoc :virussen virussen)
 
-    (doseq [x (range 1 #_8)
-            y (range 1 #_3)
+    (doseq [x (range 1 8)
+            y (range 1 3)
             :let [sprite (sprite [:virus x y])]]
       (p/assign! sprite {:x (+ -400 (* 100 x))
                          :y (+ 100 (* 100 y))})
