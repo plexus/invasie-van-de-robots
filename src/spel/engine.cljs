@@ -47,9 +47,9 @@
   (set! ui-layer (p/container {}))
 
   (set! viewport (p/container {} bg-layer sprite-layer sprite-layer-fg))
-  (set! world (p/container {} viewport))
+  (set! world (p/container {} viewport ui-layer))
 
-  (conj! stage fill-layer world ui-layer)
+  (conj! stage fill-layer world )
 
   (reset! state {:time 0
                  :scenes {}
@@ -131,12 +131,12 @@
 (defn screen-to-world-ratio []
   (let [{:keys [width height]} (screen-size)
         ui-size (:ui-size (scene-state) 0)]
-    (* (- 1 ui-size) (/ height world-height))))
+    (* #_(- 1 ui-size) (/ height world-height))))
 
 (defn screen-to-ui-ratio []
   (let [{:keys [width height]} (screen-size)
         ui-size (:ui-size (scene-state) 0)]
-    (* ui-size (/ height ui-height))))
+    (* ui-size (/ width ui-height))))
 
 (defn visible-world-width []
   (/ (:width (screen-size)) (screen-to-world-ratio)))
@@ -149,10 +149,10 @@
       (p/assign! world {:x 0
                         :scale {:x ratio
                                 :y ratio}})
-      (p/assign! ui-layer {:x 0
-                           :y (* height (- 1 ui-size))
-                           :scale {:x ui-ratio
-                                   :y ui-ratio}}))
+      (p/assign! ui-layer {:x (doto (- (visible-world-width) ui-size) prn)
+                           :y 0
+                           #_#_:scale {:x ui-ratio
+                                       :y ui-ratio}}))
     #_(.beginFill bg-graphics achtergrond-kleur)
     #_(.drawRect bg-graphics 0 0 width height)
     #_(.endFill bg-graphics)))

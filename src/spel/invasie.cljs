@@ -26,7 +26,8 @@
             [spel.thicc :as thicc])
   (:require-macros [spel.ink :refer [inline-file]]))
 
-(def show-intro? true)
+(def show-intro? (not= (engine/query-param "skipintro") "1"))
+(def debug? (= (engine/query-param "debug") "1"))
 
 (def svg-url "images/invasie_van_de_robots.svg")
 
@@ -92,11 +93,15 @@
     (show-html [:div
                 [:p "KEUZES"]
                 (for [{:keys [text index] :as choice} (ink/choices story)]
-                  [:p [:a {:on-click (fn [e]
+                  [:p [:a
+                       (let [on-click(fn [e]
                                        (.preventDefault e)
                                        (.stopPropagation e)
                                        (ink/make-choice! story index)
-                                       (story-next))} "- " text]])])
+                                       (story-next))]
+                         {:style "text-decoration: underline"
+                          :on-click on-click
+                          :on-touchstart on-click}) "- " text]])])
     :else
     (hide-text)))
 
@@ -130,7 +135,6 @@
                (make-clickable bg))
              (doseq [[k sprite] overlays
                      :when (not (some #{sprite} bg-layer))]
-               (tap> [k sprite])
                (place-room-sprite! sprite)
                (conj! bg-layer sprite)
                (make-clickable sprite))))})
@@ -175,21 +179,23 @@
                  (p/assign! (:player-animation sprites) {:visible false})
                  (p/assign! (:player-static sprites) {:visible true})
                  (p/stop! (:player-animation sprites))
-                 (when (j/get player :on-arrival)
-                   ((j/get player :on-arrival)))))))})
+                 (when-let [callback (j/get player :on-arrival)]
+                   (j/assoc! player :on-arrival nil)
+                   (callback))))))})
 
 (def +debug
-  {:enter (fn [{:keys [debug-graphics]}]
-            (conj! sprite-layer debug-graphics))
-   :leave (fn [{:keys [debug-graphics]}]
-            (disj! sprite-layer debug-graphics))
-   :tick (let [debug-count (atom 0)]
-           (fn [scene delta]
-             (let [{:keys [debug-graphics path-handler]} scene
-                   {:keys [collision-sys]} (room-state scene)]
-               (when (= 0 (mod (swap! debug-count inc) 10))
-                 (daedalus/debug-draw path-handler)
-                 (.draw collision-sys debug-graphics)))))})
+  (when debug?
+    {:enter (fn [{:keys [debug-graphics]}]
+              (conj! sprite-layer debug-graphics))
+     :leave (fn [{:keys [debug-graphics]}]
+              (disj! sprite-layer debug-graphics))
+     :tick (let [debug-count (atom 0)]
+             (fn [scene delta]
+               (let [{:keys [debug-graphics path-handler]} scene
+                     {:keys [collision-sys]} (room-state scene)]
+                 (when (= 0 (mod (swap! debug-count inc) 10))
+                   (daedalus/debug-draw path-handler)
+                   (.draw collision-sys debug-graphics)))))}))
 
 (defn exit-room! []
   (run-components! :leave (scene-state)))
@@ -281,8 +287,9 @@
                    :let [path-handler (j/get sprite :path-handler)]]
              (if (daedalus/next? path-handler)
                (daedalus/next! path-handler)
-               (when (j/get sprite :on-arrival)
-                 ((j/get sprite :on-arrival) sprite)))))
+               (when-let [callback (j/get sprite :on-arrival)]
+                 (j/assoc! sprite :on-arrival nil)
+                 (callback sprite)))))
    :leave (fn [scene]
             (let [{:keys [sprites]} scene
                   {:keys [npcs]} (room-state scene)]
@@ -313,9 +320,9 @@
                  [:click :touchstart]
                  ::click
                  (fn [e]
-                   (prn [:grabbing item])
                    (set-player-destination (scene-state) (p/local-position (j/get e :data) bg-layer))
-                   (j/assoc! player :on-arrival #(inventory-add! item)))))))
+                   (j/assoc! player :on-arrival #(do (p/unlisten! sprite [:click :touchstart] ::click)
+                                                     (inventory-add! item))))))))
    :leave (fn [scene]
             (let [{:keys [sprites]} scene
                   {:keys [items]} (room-state scene)]
@@ -334,14 +341,14 @@
 
 (def +camera
   (let [center-around-player
-        (fn [{:keys [player]}]
+        (fn [{:keys [player ui-size]}]
           ;; Keep the viewport centered on Player, clamping on the sides. Note that
           ;; our "viewport" works by shifting a base layer in the opposite
           ;; direction, so movements are negative
           (let [bg-width (:width (p/local-bounds bg-layer))
                 viewport-max (visible-world-width)]
             (if (< bg-width viewport-max)
-              (pan-viewport (/ (- bg-width viewport-max) 2))
+              (pan-viewport (/ (+ (- bg-width viewport-max) ui-size) 2))
               (pan-viewport (clamp 0
                                    (- (:x player) (/ viewport-max 2))
                                    (- bg-width viewport-max))))))]
@@ -355,14 +362,26 @@
    :text-box-click (fn [scene]
                      (story-next))})
 
+(def ui-top 80)
+(def inventory-capacity 8)
+(def inventory-box-size 100)
+(def inventory-margin 5)
+
 (def +inventory
   {:load (fn [{:keys [ui-graphics inventory sprites player path-handler] :as scene}]
            (p/with-fill [ui-graphics {:color 0xf5c842}]
-             (p/draw-rect ui-graphics 0 0 10000 100))
+             (p/draw-rect ui-graphics
+                          0 ui-top
+                          (+ inventory-box-size (* 2 inventory-margin))
+                          (+ inventory-margin (* inventory-capacity (+ inventory-box-size inventory-margin)))))
 
-           (dotimes [i 21]
+           (dotimes [i 8]
              (p/with-fill [ui-graphics {:color 0xffffffff}]
-               (p/draw-rect ui-graphics (+ 5 (* 95 i)) 5 90 90))))
+               (p/draw-rect ui-graphics
+                            inventory-margin
+                            (+ ui-top inventory-margin (* (+ inventory-box-size inventory-margin) i))
+                            inventory-box-size
+                            inventory-box-size))))
    :tick (fn [{:keys [ui-graphics inventory sprites player path-handler] :as scene}]
            (doseq [sprite ui-layer
                    :when (and (:item sprite)
@@ -376,14 +395,14 @@
                    scale (/ 70 size)]
                (if (some #{sprite} ui-layer)
                  (when-not (:dragging sprite)
-                   (p/assign! sprite {:x (+ 15 (* 95 idx))
-                                      :y 15
+                   (p/assign! sprite {:x (* 3 inventory-margin)
+                                      :y (+ ui-top (* 3 inventory-margin) (* (+ inventory-margin inventory-box-size) (- inventory-capacity idx 1)))
                                       :alpha 1
                                       :zIndex 0}))
                  (do
                    (conj! ui-layer sprite)
-                   (p/assign! sprite {:x (+ 15 (* 95 idx))
-                                      :y 15
+                   (p/assign! sprite {:x (* 3 inventory-margin)
+                                      :y (+ ui-top (* 3 inventory-margin) (* (+ inventory-margin inventory-box-size) (- inventory-capacity idx 1)))
                                       :alpha 1
                                       :scale {:x scale :y scale}
                                       :interactive true
@@ -423,6 +442,7 @@
                                                 (p/rect-overlap? sprite %))
                                        %)
                                     (concat sprite-layer ui-layer [player]))]
+                          (log/info :combine-items {:sprite (:id sprite) :target (:id target)})
                           (when-not (combine-items sprite target scene)
                             (combine-items-default sprite target)))))))))))})
 
@@ -644,7 +664,7 @@
                                 :path-handler path-handler
                                 :debug-graphics debug-graphics
                                 :ui-graphics ui-graphics
-                                :ui-size 0.1
+                                :ui-size 120
                                 :inventory []
                                 :images images
                                 :intro-done? false
@@ -826,7 +846,6 @@
   (open-riool! (scene-state)))
 
 (defmethod on-cue "kast gaat open" [cue]
-  (prn cue)
   (open-kast! (scene-state))
   (js/setTimeout (fn []
                    (scene-swap! (fn [scene]
@@ -858,37 +877,3 @@
     (p/draw-rect g 867 906 20 20))
 
   (p/clear! g))
-
-;; (inventory-add! :robot-hoofd :robot-lichaam :katteneten)
-
-;; (:inventory (scene-state))
-
-;; (:position (:player (scene-state)))
-;; ;; => #pixi/ObservablePoint {:x 1010.169080625786, :y 848.1984371376151}
-;; ;; => #pixi/ObservablePoint {:x 659.8823042474914, :y 918.1529474170061}
-
-
-
-;; (enull? (daedalus/locate-position 700 900 (:mesh (:path-handler (scene-state)))))
-
-;; (.-_pos (.-_originVertex (.-_edge (first (:_faces (:mesh (:path-handler (scene-state))))))))
-;; ;; => #hxDaedalus.data.math/Point2D {:x 1422.618680015489, :y 1010, :length 1744.6902042279632}
-
-;; (defn enull? [value]
-;;   (and (array? value) (= "ENull" (first value))))
-
-;; (for [face (:_faces (:mesh (:path-handler (scene-state))))]
-;;   [(enull? (.isInFace daedalus/Geom2D 100 800 face))
-;;    (.-_isReal face)])
-
-
-(def astar (daedalus/a-star {:radius 20 :mesh (:mesh (:path-handler (scene-state)))}))
-
-(let [from-x 900
-      from-y 800
-      to-x 900
-      to-y 900
-      a #js []
-      b #js []]
-  (.findPath astar from-x from-y to-x to-y a b)
-  [(seq a) (seq b)])
