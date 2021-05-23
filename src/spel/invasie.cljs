@@ -852,9 +852,7 @@
   (inventory-add! :katteneten))
 
 (defmethod on-cue "riool gaat open" [cue]
-  (open-riool! (scene-state)))
-
-(defmethod on-cue "verwijder katteneten" [cue]
+  (open-riool! (scene-state))
   (inventory-remove! :katteneten))
 
 (defmethod on-cue "kast gaat open" [cue]
