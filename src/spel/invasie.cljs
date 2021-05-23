@@ -686,11 +686,19 @@
 
 (defn inventory-add! [& items]
   (scene-swap! update :inventory #(distinct (apply conj (vec %) items)))
+  (doseq [item items]
+    (try
+      (ink/set-variable story (str "inventory_" (name item)) true)
+      (catch :default e)))
   true)
 
 (defn inventory-remove! [& items]
   (scene-swap! update :inventory #(vec (remove (set items) %)))
   (scene-swap! update :used into items)
+  (doseq [item items]
+    (try
+      (ink/set-variable story (str "inventory_" (name item)) false)
+      (catch :default e)))
   true)
 
 (defmethod combine-items :spuitbus [this that _]
@@ -846,6 +854,9 @@
 (defmethod on-cue "riool gaat open" [cue]
   (open-riool! (scene-state)))
 
+(defmethod on-cue "verwijder katteneten" [cue]
+  (inventory-remove! :katteneten))
+
 (defmethod on-cue "kast gaat open" [cue]
   (open-kast! (scene-state))
   (js/setTimeout (fn []
@@ -896,3 +907,5 @@
 
 ;; (p/assign! (:eindbaas (:sprites (scene-state)))
 ;;            {:rotation (/ Math/PI 2)})
+
+(inventory-add! :katteneten)

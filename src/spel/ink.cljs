@@ -53,6 +53,9 @@
 (defn variable-state [story]
   (js->clj (.-variablesState ^js story)))
 
+(defn set-variable [story variable value]
+  (j/assoc-in! story [:variablesState variable] value))
+
 (comment
   (def json (subs (inline-file "resources/public/scenario.json") 1))
 
