@@ -55,7 +55,6 @@ ROBOT: RIOOLDEKSEL IS SUPER GEHEIME TUNNEL NAAR LANCEERBASIS. MOET BEWAAKT WORDE
 SPELER: Als je het deksel even open doet, dan zal ik de binnenkant bewaken! Goed idee, toch!
 ROBOT: ....
 ROBOT: OK!
->>> verwijder katteneten
 >>> riool gaat open
 
 -> END
