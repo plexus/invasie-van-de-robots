@@ -860,7 +860,13 @@
              {:anchor {:x 0.5 :y 1}
               :rotation (/ Math/PI 2)
               :position {:x 922.0621102362204, :y 860.39613648293954}})
-  (show-text "BOENK"))
+  (flash-text "BOENK")
+  (js/setTimeout #(conj! (thicc/query "#center")
+                         (thicc/dom [:div#you-win
+                                     {:style
+                                      "font-size: 50vh; text-shadow: 15px 0 black, -15px 0 0 black, 0 15px 0 black, 0 -15px 0 black;"}
+                                     "YOU WIN !"]))
+                 3000))
 
 (def no-clean-ns nil)
 
