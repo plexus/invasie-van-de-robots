@@ -1,5 +1,6 @@
 (ns spel.invasie
   (:require ["pixi.js" :as pixi]
+            #_["@pixi/filter-shockwave" :as filter-shockwave]
             [applied-science.js-interop :as j]
             [clojure.string :as str]
             [kitchen-async.promise :as promise]
@@ -854,8 +855,14 @@
                    (js/setTimeout story-next 500))
                  500))
 
-(def no-clean-ns nil)
+(defmethod on-cue "baas valt om" [cue]
+  (p/assign! (:eindbaas (:sprites (scene-state)))
+             {:anchor {:x 0.5 :y 1}
+              :rotation (/ Math/PI 2)
+              :position {:x 922.0621102362204, :y 860.39613648293954}})
+  (show-text "BOENK"))
 
+(def no-clean-ns nil)
 
 ;; (:slaapkamer (:rooms (scene-state)))
 
@@ -877,3 +884,9 @@
     (p/draw-rect g 867 906 20 20))
 
   (p/clear! g))
+
+;; (j/update! (:eindbaas (:sprites (scene-state)))
+;;            :rotation + 0.05)
+
+;; (p/assign! (:eindbaas (:sprites (scene-state)))
+;;            {:rotation (/ Math/PI 2)})

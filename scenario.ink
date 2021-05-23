@@ -90,3 +90,10 @@ Misschien kan ik me eerst vermommen in een robot. Eens kijken wat ik hier nog li
 
 ->END
 
+=== eindbaas ===
+
+SPELER: Haha, je spel is uit!
+BAAS: Nee, dat kan niet... Neeeeeeeee
+>>> baas valt om
+
+->END
