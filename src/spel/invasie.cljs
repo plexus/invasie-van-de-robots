@@ -881,18 +881,6 @@
 
 (def no-clean-ns nil)
 
-;; (:slaapkamer (:rooms (scene-state)))
-
-;; (-> (scene-state) :elements :keuken-ingang)
-;; (-> (scene-state) :elements :keuken-uitgang)
-;; (keys (-> (scene-state) :rooms :keuken))
-
-;; (some #{(:player (scene-state))}sprite-layer)
-
-;; (:position (:player (scene-state)))
-
-;; (:debug-graphics (scene-state))
-
 (comment
   (def g (p/graphics))
   (conj! viewport g)
@@ -901,11 +889,3 @@
     (p/draw-rect g 867 906 20 20))
 
   (p/clear! g))
-
-;; (j/update! (:eindbaas (:sprites (scene-state)))
-;;            :rotation + 0.05)
-
-;; (p/assign! (:eindbaas (:sprites (scene-state)))
-;;            {:rotation (/ Math/PI 2)})
-
-(inventory-add! :katteneten)

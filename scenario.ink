@@ -58,7 +58,6 @@ ROBOT: OK!
 >>> verwijder katteneten
 >>> riool gaat open
 
-
 -> END
 
 === winkel ===
