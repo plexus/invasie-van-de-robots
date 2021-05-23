@@ -278,6 +278,7 @@
                    [:click :touchstart]
                    (fn [_]
                      (when-let [{{:keys [x y]} :point} (get-in (room-state) [:elements (keyword (str (name id) "-dialogue-spot"))])]
+
                        (daedalus/set-destination path-handler x y))
                      (if (text-box-visible?)
                        (story-next)
@@ -363,23 +364,24 @@
    :text-box-click (fn [scene]
                      (story-next))})
 
-(def ui-top 80)
-(def inventory-capacity 8)
+(def ui-top 510)
+(def inventory-capacity 4)
 (def inventory-box-size 100)
-(def inventory-margin 5)
+(def inventory-margin 10)
+(def inventory-right 20)
 
 (def +inventory
   {:load (fn [{:keys [ui-graphics inventory sprites player path-handler] :as scene}]
-           (p/with-fill [ui-graphics {:color 0xf5c842}]
-             (p/draw-rect ui-graphics
-                          0 ui-top
-                          (+ inventory-box-size (* 2 inventory-margin))
-                          (+ inventory-margin (* inventory-capacity (+ inventory-box-size inventory-margin)))))
-
-           (dotimes [i 8]
-             (p/with-fill [ui-graphics {:color 0xffffffff}]
+           #_(p/with-fill [ui-graphics {:color 0xf5c842 :alpha 0.8}]
                (p/draw-rect ui-graphics
-                            inventory-margin
+                            0 ui-top
+                            (+ inventory-box-size (* 2 inventory-margin))
+                            (+ inventory-margin (* inventory-capacity (+ inventory-box-size inventory-margin)))))
+
+           (dotimes [i inventory-capacity]
+             (p/with-fill [ui-graphics {:color 0xf5c842 #_0xccccff :alpha 0.7}]
+               (p/draw-rect ui-graphics
+                            (- inventory-right)
                             (+ ui-top inventory-margin (* (+ inventory-box-size inventory-margin) i))
                             inventory-box-size
                             inventory-box-size))))
@@ -396,7 +398,7 @@
                    scale (/ 70 size)]
                (if (some #{sprite} ui-layer)
                  (when-not (:dragging sprite)
-                   (p/assign! sprite {:x (* 3 inventory-margin)
+                   (p/assign! sprite {:x (- inventory-right (* 2 inventory-margin))
                                       :y (+ ui-top (* 3 inventory-margin) (* (+ inventory-margin inventory-box-size) (- inventory-capacity idx 1)))
                                       :alpha 1
                                       :zIndex 0}))
@@ -805,12 +807,21 @@
       (story-goto! "robot_krijgt_katteneten"))
     false))
 
-(defmethod start-scene :invasie [{:keys [player debug-graphics ui-graphics]
+(defmethod start-scene :invasie [{:keys [player debug-graphics ui-graphics path-handler]
                                   :as scene}]
   (conj! ui-layer ui-graphics)
   (p/assign! ui-layer {:sortableChildren true})
   (p/assign! ui-graphics {:zIndex -100})
-  (run-components! :enter scene))
+  (run-components! :enter scene)
+  (doseq [item (some-> "items" engine/query-param (str/split #","))]
+    (when (seq item)
+      (inventory-add! (keyword item))))
+  (when-let [pos (engine/query-param "pos")]
+    (let [[x y] (str/split pos #",")
+          x (js/parseInt x 10)
+          y (js/parseInt y 10)]
+      (p/assign! player {:location {:x x :y y}})
+      (daedalus/set-location path-handler x y))))
 
 (defmethod tick-scene :invasie [{:keys [delta] :as scene}]
   (run-components! :tick scene delta))
@@ -873,7 +884,7 @@
   (js/setTimeout #(conj! (thicc/query "#center")
                          (thicc/dom [:div#you-win
                                      {:style
-                                      "font-size: 50vh; text-shadow: 15px 0 black, -15px 0 0 black, 0 15px 0 black, 0 -15px 0 black;"}
+                                      "font-size: 40vh; text-shadow: 15px 0 black, -15px 0 0 black, 0 15px 0 black, 0 -15px 0 black;"}
                                      "YOU WIN !"]))
                  3000))
 

@@ -73,8 +73,8 @@
 
     (scene-swap! assoc :virussen virussen)
 
-    (doseq [x (range 1 8)
-            y (range 1 3)
+    (doseq [x (range 1 (if invasie/debug? 2 8))
+            y (range 1 (if invasie/debug? 2 3))
             :let [sprite (sprite [:virus x y])]]
       (p/assign! sprite {:x (+ -400 (* 100 x))
                          :y (+ 100 (* 100 y))})
@@ -119,6 +119,9 @@
         (disj! virussen virus))
       (when (empty? virussen)
         (engine/goto-scene :invasie)
-        (invasie/enter-room! (engine/scene-state) :kelder :kelder-ingang)))))
+        (invasie/enter-room! (engine/scene-state) :kelder :kelder-ingang)
+        (let [{:keys [player sprites]} (engine/scene-state)]
+          (disj! player (:robot-hoofd sprites))
+          (disj! player (:robot-lichaam sprites)))))))
 
 (def no-clean-ns nil)
