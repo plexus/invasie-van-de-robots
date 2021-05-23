@@ -69,7 +69,8 @@
 (defmethod tick-scene :default [_])
 (defmethod stop-scene :default [_]
   (p/remove-children bg-layer)
-  (p/remove-children sprite-layer))
+  (p/remove-children sprite-layer)
+  (p/remove-children sprite-layer-fg))
 
 (defmethod handle-event :default [_ _])
 
