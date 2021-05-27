@@ -82,6 +82,9 @@
 
 (defn story-next []
   (cond
+    (:done! (scene-state))
+    nil
+
     (ink/can-continue? story)
     (let [text (ink/continue! story)]
       (if (str/starts-with? text ">>>")
@@ -107,8 +110,9 @@
     (hide-text)))
 
 (defn story-goto! [path]
-  (ink/goto-path! story path)
-  (story-next))
+  (when-not (:done! (scene-state))
+    (ink/goto-path! story path)
+    (story-next)))
 
 (defmulti handle-room :room)
 (defmethod handle-room :default [scene])
@@ -158,7 +162,8 @@
             (conj! sprite-layer-fg player))
    :leave (fn [{:keys [player]}]
             (disj! sprite-layer-fg player))
-   :bg-click set-player-destination
+   :bg-click #(when-not (text-box-visible?)
+                (set-player-destination %1 %2))
    :tick (fn [{:keys [player path-handler sprites] :as scene} delta]
            (let [{:keys [player-collision collision-sys]
                   :as room} (room-state scene)
@@ -322,9 +327,12 @@
                  [:click :touchstart]
                  ::click
                  (fn [e]
-                   (set-player-destination (scene-state) (p/local-position (j/get e :data) bg-layer))
-                   (j/assoc! player :on-arrival #(do (p/unlisten! sprite [:click :touchstart] ::click)
-                                                     (inventory-add! item))))))))
+                   (if (text-box-visible?)
+                     (story-next)
+                     (do
+                       (set-player-destination (scene-state) (p/local-position (j/get e :data) bg-layer))
+                       (j/assoc! player :on-arrival #(do (p/unlisten! sprite [:click :touchstart] ::click)
+                                                         (inventory-add! item))))))))))
    :leave (fn [scene]
             (let [{:keys [sprites]} scene
                   {:keys [items]} (room-state scene)]
@@ -416,10 +424,12 @@
                     sprite
                     [:mousedown :touchstart]
                     (fn [evt]
-                      (p/assign! sprite {:data (j/get evt :data)
-                                         :alpha 0.5
-                                         :dragging true
-                                         :zIndex 1})))
+                      (if (text-box-visible?)
+                        (story-next)
+                        (p/assign! sprite {:data (j/get evt :data)
+                                           :alpha 0.5
+                                           :dragging true
+                                           :zIndex 1}))))
 
                    (p/listen!
                     sprite
@@ -881,11 +891,13 @@
               :rotation (/ Math/PI 2)
               :position {:x 922.0621102362204, :y 860.39613648293954}})
   (flash-text "BOENK")
-  (js/setTimeout #(conj! (thicc/query "#center")
-                         (thicc/dom [:div#you-win
-                                     {:style
-                                      "font-size: 40vh; text-shadow: 15px 0 black, -15px 0 0 black, 0 15px 0 black, 0 -15px 0 black;"}
-                                     "YOU WIN !"]))
+  (js/setTimeout #(do
+                    (conj! (thicc/query "#center")
+                           (thicc/dom [:div#you-win
+                                       {:style
+                                        "font-size: 40vh; text-shadow: 15px 0 black, -15px 0 0 black, 0 15px 0 black, 0 -15px 0 black;"}
+                                       "YOU WIN !"]))
+                    (scene-swap! assoc :done! true))
                  3000))
 
 (def no-clean-ns nil)
